@@ -42,6 +42,11 @@ describe('resolveAtBat', () => {
     expect(result).toBe('FLYOUT') // 8 - 2 = 6 → FLYOUT
   })
 
+  it('returns TRIPLE on roll 9 with no modifiers', () => {
+    mockRoll(4, 5) // roll 9
+    expect(resolveAtBat({ contact: 5, power: 5 }, { pitching: 1 })).toBe('TRIPLE')
+  })
+
   it('clamps adjusted roll to 2 minimum', () => {
     // contact=1, power=1, pitching=10: adj = -2 + -1 + -2 = -5, roll 2 → max(2, 2-5)=2
     mockRoll(1, 1) // roll 2

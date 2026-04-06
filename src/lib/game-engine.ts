@@ -12,7 +12,7 @@ const OUTCOME_TABLE: Record<number, Outcome> = {
   6:  'FLYOUT',
   7:  'GROUNDOUT',
   8:  'SINGLE',
-  9:  'FLYOUT',
+  9:  'TRIPLE',
   10: 'DOUBLE',
   11: 'WALK',
   12: 'HR',
