@@ -26,6 +26,17 @@ spec:
           envFrom:
             - secretRef:
                 name: {{ include "playball-exe.fullname" . }}
+        - name: seed
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - node_modules/.bin/ts-node
+            - --compiler-options
+            - '{"module":"CommonJS"}'
+            - prisma/seed.ts
+          envFrom:
+            - secretRef:
+                name: {{ include "playball-exe.fullname" . }}
       containers:
         - name: app
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"

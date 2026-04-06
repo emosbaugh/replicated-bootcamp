@@ -1,8 +1,8 @@
 # Container image for the app (and migration init container)
 image:
-  repository: playball-exe
-  tag: latest
-  pullPolicy: IfNotPresent
+  repository: docker.io/replemos/playball.exe
+  tag: main
+  pullPolicy: Always
 
 replicaCount: 1
 
