@@ -1,4 +1,4 @@
-# Baseball Game Web App — Design Spec
+# playball.exe — Design Spec
 
 **Date:** 2026-04-06
 **Status:** Approved
