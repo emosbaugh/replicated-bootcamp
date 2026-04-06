@@ -16,17 +16,41 @@ export async function GET() {
     })
     if (!team) return NextResponse.json({ error: 'No team' }, { status: 404 })
 
-    const players = await prisma.player.findMany({
-      where: { teamId: team.id },
-      include: {
-        mlbPlayer: true,
-        playerSeason: true,
-      },
-      orderBy: [
-        { mlbPlayer: { isPitcher: 'asc' } },
-        { mlbPlayer: { lineupOrder: 'asc' } },
-      ],
-    })
+    const [players, activeGame] = await Promise.all([
+      prisma.player.findMany({
+        where: { teamId: team.id },
+        include: { mlbPlayer: true, playerSeason: true },
+        orderBy: [
+          { mlbPlayer: { isPitcher: 'asc' } },
+          { mlbPlayer: { lineupOrder: 'asc' } },
+        ],
+      }),
+      prisma.game.findFirst({
+        where: { userId: session.user.id, status: 'in_progress' },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+    type GameStats = Record<string, { ab: number; h: number; hr: number; rbi: number; bb: number; k: number; doubles: number; triples: number }>
+    const activeStats = (activeGame?.gameStats ?? {}) as GameStats
+
+    function mergedSeason(p: typeof players[number]) {
+      const s = p.playerSeason
+      const g = activeStats[p.id]
+      if (!s) return null
+      if (!g) return s
+      return {
+        ...s,
+        atBats: s.atBats + g.ab,
+        hits: s.hits + g.h,
+        homeRuns: s.homeRuns + g.hr,
+        rbi: s.rbi + g.rbi,
+        walks: s.walks + (g.bb ?? 0),
+        strikeouts: s.strikeouts + (g.k ?? 0),
+        doubles: s.doubles + (g.doubles ?? 0),
+        triples: s.triples + (g.triples ?? 0),
+      }
+    }
 
     const batters = players
       .filter((p) => !p.mlbPlayer.isPitcher && p.mlbPlayer.lineupOrder !== null)
@@ -35,7 +59,7 @@ export async function GET() {
         name: p.mlbPlayer.name,
         position: p.mlbPlayer.position,
         number: p.mlbPlayer.number,
-        season: p.playerSeason,
+        season: mergedSeason(p),
       }))
 
     const pitchers = players
@@ -45,7 +69,7 @@ export async function GET() {
         name: p.mlbPlayer.name,
         position: p.mlbPlayer.position,
         number: p.mlbPlayer.number,
-        season: p.playerSeason,
+        season: mergedSeason(p),
       }))
 
     const user = await prisma.user.findUnique({

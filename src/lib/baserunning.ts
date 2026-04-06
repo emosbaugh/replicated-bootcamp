@@ -109,26 +109,26 @@ export function describePlay(name: string, outcome: Outcome, runsScored: number)
   switch (outcome) {
     case 'HR':
       return runsScored === 1
-        ? `${lastName} — Solo HR`
-        : `${lastName} — ${runsScored}-run HR`
+        ? `${lastName} -Solo HR`
+        : `${lastName} -${runsScored}-run HR`
     case 'TRIPLE':
       return runsScored > 0
-        ? `${lastName} — Triple, ${runsScored} score`
-        : `${lastName} — Triple`
+        ? `${lastName} -Triple, ${runsScored} score`
+        : `${lastName} -Triple`
     case 'DOUBLE':
       return runsScored > 0
-        ? `${lastName} — Double, ${runsScored} score`
-        : `${lastName} — Double`
+        ? `${lastName} -Double, ${runsScored} score`
+        : `${lastName} -Double`
     case 'SINGLE':
       return runsScored > 0
-        ? `${lastName} — Single, scores`
-        : `${lastName} — Single`
+        ? `${lastName} -Single, scores`
+        : `${lastName} -Single`
     case 'WALK':
       return runsScored > 0
-        ? `${lastName} — Walk, scores`
-        : `${lastName} — Walk`
-    case 'GROUNDOUT': return `${lastName} — Groundout`
-    case 'FLYOUT':    return `${lastName} — Flyout`
-    case 'STRIKEOUT': return `${lastName} — Strikeout`
+        ? `${lastName} -Walk, scores`
+        : `${lastName} -Walk`
+    case 'GROUNDOUT': return `${lastName} -Groundout`
+    case 'FLYOUT':    return `${lastName} -Flyout`
+    case 'STRIKEOUT': return `${lastName} -Strikeout`
   }
 }
