@@ -41,11 +41,14 @@ export async function POST(req: NextRequest) {
       },
     })
     const cpuOptions = allTeams.filter((t) => t.id !== userTeam.mlbTeamId)
+    if (cpuOptions.length === 0) {
+      return NextResponse.json({ error: 'No CPU team available' }, { status: 400 })
+    }
     const cpuMlbTeam = cpuOptions[Math.floor(Math.random() * cpuOptions.length)]
 
     // Build CPU lineup JSON (9 batters ordered by lineupOrder)
+    // Note: players are already filtered to non-pitchers with lineupOrder by the Prisma query
     const cpuBatters = cpuMlbTeam.players
-      .filter((p) => !p.isPitcher && p.lineupOrder !== null)
       .sort((a, b) => (a.lineupOrder ?? 0) - (b.lineupOrder ?? 0))
       .slice(0, 9)
       .map((p) => ({ id: p.id, name: p.name, contact: p.contact, power: p.power }))
