@@ -1,0 +1,43 @@
+# Container image for the app (and migration init container)
+image:
+  repository: playball-exe
+  tag: latest
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+service:
+  # ClusterIP | LoadBalancer | NodePort
+  type: ClusterIP
+  port: 3000
+
+ingress:
+  enabled: false
+  className: ""
+  hostname: ""
+  # tls:
+  #   - secretName: playball-exe-tls
+  #     hosts:
+  #       - playball.example.com
+  tls: []
+
+# Set postgresql.enabled=false and provide externalDatabase.url to use your own PostgreSQL
+postgresql:
+  enabled: true
+  auth:
+    database: baseball
+    username: baseball
+    # Override this in production!
+    password: baseball
+  primary:
+    persistence:
+      size: 1Gi
+
+# Only used when postgresql.enabled=false
+externalDatabase:
+  url: ""
+
+nextauth:
+  # Required: generate with: openssl rand -base64 32
+  secret: ""
+  url: "http://localhost:3000"

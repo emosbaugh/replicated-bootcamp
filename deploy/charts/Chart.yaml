@@ -1,0 +1,11 @@
+apiVersion: v2
+name: playball-exe
+description: Helm chart for deploying the playball.exe baseball game
+type: application
+version: 0.1.0
+appVersion: "latest"
+dependencies:
+  - name: postgresql
+    version: "18.5.15"
+    repository: oci://registry-1.docker.io/bitnamicharts
+    condition: postgresql.enabled
