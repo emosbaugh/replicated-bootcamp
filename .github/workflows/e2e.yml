@@ -1,0 +1,75 @@
+name: E2E Test on CMX
+
+on:
+  workflow_run:
+    workflows: ["Build and Push Docker Image"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    env:
+      REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install replicated CLI
+        run: |
+          curl -fsSL https://raw.githubusercontent.com/replicatedhq/replicated/main/install.sh | sudo bash
+
+      - name: Create CMX cluster
+        run: |
+          CLUSTER_ID=$(replicated cluster create \
+            --distribution k3s --version 1.32 --ttl 1h \
+            --name ci-e2e-${{ github.run_id }} \
+            | awk 'NR==2 {print $1}')
+          echo "CLUSTER_ID=$CLUSTER_ID" >> $GITHUB_ENV
+
+      - name: Wait for cluster
+        run: |
+          until replicated cluster ls | awk -v id="$CLUSTER_ID" '$1==id {print $5}' | grep -q running; do
+            echo "Waiting for cluster..."
+            sleep 10
+          done
+
+      - name: Configure kubectl
+        run: |
+          replicated cluster kubeconfig "$CLUSTER_ID" --output-path /tmp/kubeconfig
+          echo "KUBECONFIG=/tmp/kubeconfig" >> $GITHUB_ENV
+
+      - name: Install Helm chart
+        run: |
+          helm install playball deploy/charts \
+            --set nextauth.secret="$(openssl rand -base64 32)" \
+            --set service.type=NodePort \
+            --dependency-update \
+            --wait --timeout 10m
+
+      - name: Expose app
+        run: |
+          NODE_PORT=$(kubectl get svc playball -o jsonpath='{.spec.ports[0].nodePort}')
+          APP_URL=$(replicated cluster port expose "$CLUSTER_ID" \
+            --port "$NODE_PORT" --protocol http,https \
+            | grep https | awk '{print $4}')
+          echo "APP_URL=$APP_URL" >> $GITHUB_ENV
+
+      - name: Wait for app to be reachable
+        run: |
+          until curl -sf --max-time 5 "$APP_URL" > /dev/null 2>&1; do
+            echo "Waiting for app..."
+            sleep 10
+          done
+
+      - name: Test registration
+        run: |
+          RESPONSE=$(curl -sf -X POST "$APP_URL/api/auth/register" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci@example.com","password":"cipassword123","franchiseName":"CI Franchise"}')
+          echo "$RESPONSE"
+          echo "$RESPONSE" | jq -e '.success == true'
+
+      - name: Delete cluster
+        if: always()
+        run: replicated cluster rm "$CLUSTER_ID"
