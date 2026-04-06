@@ -41,7 +41,7 @@ export async function finalizeGame(gameId: string, userId: string): Promise<void
       where: { playerId: userPitcher.id },
       data: {
         gamesStarted: { increment: 1 },
-        inningsPitched: { increment: 9 },
+        inningsPitched: { increment: game.inning },
         earnedRuns: { increment: game.awayScore },
       },
     })

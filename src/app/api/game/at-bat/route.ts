@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const playDesc = describePlay(mlp.name, outcome, basesResult.runsScored)
 
     // Update game stats
-    const gameStats = game.gameStats as Record<string, { ab: number; h: number; hr: number; rbi: number; bb: number; k: number; doubles: number; triples: number }>
+    const gameStats = game.gameStats as unknown as Record<string, { ab: number; h: number; hr: number; rbi: number; bb: number; k: number; doubles: number; triples: number }>
     const myStats = gameStats[currentBatter.id] ?? { ab: 0, h: 0, hr: 0, rbi: 0, bb: 0, k: 0, doubles: 0, triples: 0 }
 
     const isHit = ['SINGLE', 'DOUBLE', 'TRIPLE', 'HR'].includes(outcome)
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const newOuts = basesResult.outRecorded ? game.outs + 1 : game.outs
     const newHomeScore = game.homeScore + basesResult.runsScored
     const newLineupPosition = (game.lineupPosition + 1) % batters.length
-    const gameLog = [...(game.gameLog as string[]), playDesc]
+    const gameLog = [...(game.gameLog as unknown as string[]), playDesc]
 
     let lastCpuLog: string[] | undefined
 
