@@ -43,6 +43,7 @@ export async function buildGameState(gameId: string, userId: string): Promise<Ga
   const gameLog = game.gameLog as string[]
 
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { franchiseName: true } })
+  if (!user) return null
 
   return {
     id: game.id,
@@ -73,7 +74,7 @@ export async function buildGameState(gameId: string, userId: string): Promise<Ga
     userTeam: {
       name: team.mlbTeam.name,
       abbr: team.mlbTeam.abbr,
-      franchiseName: user!.franchiseName,
+      franchiseName: user.franchiseName,
     },
     cpuTeam: {
       name: game.cpuTeamName,
