@@ -13,7 +13,7 @@
 ## File Map
 
 ```
-baseball-game/
+replicated-bootcamp/   ← repo root
 ├── docker-compose.yml
 ├── .env.example
 ├── vitest.config.ts
@@ -103,19 +103,19 @@ export interface GameState {
 - Create: `vitest.config.ts`
 - Modify: `package.json` (add dependencies + scripts)
 
-- [ ] **Step 1: Scaffold the Next.js app**
+- [ ] **Step 1: Scaffold the Next.js app into the repo root**
 
 From inside `/Users/ethan/go/src/github.com/emosbaugh/replicated-bootcamp`:
 ```bash
-npx create-next-app@latest baseball-game \
+npx create-next-app@latest . \
   --typescript \
   --tailwind \
   --app \
   --src-dir \
   --import-alias "@/*" \
   --no-eslint
-cd baseball-game
 ```
+When prompted "Would you like to use Turbopack?" — answer No. When asked about overwriting existing files (README.md), answer Yes.
 
 - [ ] **Step 2: Install dependencies**
 
@@ -201,8 +201,7 @@ Expected: postgres container running on port 5432.
 - [ ] **Step 10: Commit**
 
 ```bash
-cd /Users/ethan/go/src/github.com/emosbaugh/replicated-bootcamp
-git add baseball-game/
+git add .
 git commit -m "feat: scaffold Next.js baseball game project"
 ```
 
