@@ -97,7 +97,7 @@ export interface GameState {
 ### Task 1: Project Scaffolding
 
 **Files:**
-- Create: `baseball-game/` (new Next.js project)
+- Create: `playball.exe/` (new Next.js project)
 - Create: `docker-compose.yml`
 - Create: `.env.example`
 - Create: `vitest.config.ts`
@@ -2193,7 +2193,7 @@ import { Providers } from './providers'
 const mono = Geist_Mono({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Baseball Game',
+  title: 'playball.exe',
   description: 'Turn-by-turn baseball dice game',
 }
 

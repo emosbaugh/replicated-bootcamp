@@ -1,4 +1,4 @@
-# Baseball Game
+# playball.exe
 
 A web-based baseball management game built with Next.js, Prisma, and PostgreSQL.
 

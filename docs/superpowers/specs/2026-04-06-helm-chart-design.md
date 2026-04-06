@@ -65,7 +65,7 @@ When `postgresql.enabled: true`, the Bitnami chart deploys a PostgreSQL Stateful
 
 ```yaml
 image:
-  repository: baseball-game        # users override with their registry/image
+  repository: playball.exe        # users override with their registry/image
   tag: latest
   pullPolicy: IfNotPresent
 
