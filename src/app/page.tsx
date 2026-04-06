@@ -32,7 +32,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4">
       <pre className="font-mono text-green-400 text-2xl mb-8">
-        {`⚾  BASEBALL DICE GAME  ⚾`}
+        {`⚾  PLAYBALL.EXE  ⚾`}
       </pre>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4 w-full max-w-xs">
         <input
@@ -60,7 +60,7 @@ export default function LoginPage() {
           {loading ? 'LOGGING IN...' : 'LOGIN'}
         </button>
         <Link href="/signup" className="font-mono text-xs text-center text-green-600 hover:text-green-400">
-          NEW FRANCHISE? SIGN UP →
+          NEW FRANCHISE? SIGN UP -&gt;
         </Link>
       </form>
     </div>

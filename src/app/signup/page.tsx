@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function SignupPage() {
   const router = useRouter()
@@ -76,6 +77,9 @@ export default function SignupPage() {
           className="bg-black border border-green-400 text-green-400 font-mono p-2 text-sm focus:outline-none"
         />
         {error && <p className="font-mono text-red-400 text-xs">{error}</p>}
+        <Link href="/" className="font-mono text-green-600 text-xs text-center hover:text-green-400">
+          &lt;- BACK TO LOGIN
+        </Link>
         <button
           type="submit"
           disabled={loading}
