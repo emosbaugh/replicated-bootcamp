@@ -9,7 +9,7 @@ Expand the name of the chart.
 Common labels
 */}}
 {{- define "playball-exe.labels" -}}
-helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version }}
+helm.sh/chart: {{ printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" }}
 app.kubernetes.io/name: playball-exe
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
@@ -34,6 +34,10 @@ Bitnami names it: <release-name>-postgresql
 {{/*
 DATABASE_URL — constructed from subchart values when postgresql.enabled,
 or passed through from externalDatabase.url.
+
+WARNING: The postgresql password is interpolated directly into the URL string.
+Never commit rendered Helm manifests (helm template output) to version control,
+as they will contain the password in plaintext.
 */}}
 {{- define "playball-exe.databaseUrl" -}}
 {{- if .Values.postgresql.enabled -}}
