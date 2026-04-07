@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import type { GameState } from '@/app/api/game/types'
+import { statBar } from '@/lib/stat-bar'
 
 const OUTCOME_TABLE: Record<number, string> = {
   2: 'STRIKEOUT', 3: 'STRIKEOUT', 4: 'GROUNDOUT', 5: 'GROUNDOUT',
@@ -18,10 +19,6 @@ interface Props {
 function contactBonus(c: number) { return Math.round((c - 5.5) / 2.25) }
 function powerBonus(p: number) { return Math.round((p - 5.5) / 4.5) }
 function pitcherPenalty(p: number) { return Math.round((p - 1) / 4.5) }
-function statBar(v: number) {
-  const clamped = Math.max(0, Math.min(10, v))
-  return '█'.repeat(clamped) + '░'.repeat(10 - clamped)
-}
 function sgn(n: number) { return (n >= 0 ? '+' : '') + n }
 function rd() { return Math.ceil(Math.random() * 6) }
 
