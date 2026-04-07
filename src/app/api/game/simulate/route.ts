@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { resolveAtBat } from '@/lib/game-engine'
 import { advanceBases, type Bases } from '@/lib/baserunning'
 import { runCpuHalfInning, type CpuBatter, type CpuPitcher } from '@/lib/cpu-runner'
-import { buildGameState } from '@/lib/game-state'
+import { buildGameState, invalidateGameStateCache } from '@/lib/game-state'
 import { finalizeGame } from '@/lib/game-end'
 
 export async function POST(req: NextRequest) {
@@ -115,6 +115,8 @@ export async function POST(req: NextRequest) {
         bases = { first: null, second: null, third: null }
       }
     }
+
+    await invalidateGameStateCache(game.id)
 
     await prisma.game.update({
       where: { id: game.id },
