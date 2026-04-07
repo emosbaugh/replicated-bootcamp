@@ -77,3 +77,9 @@ nextauth:
   # Required: generate with: openssl rand -base64 32
   secret: ""
   url: "http://localhost:3000"
+
+# Replicated SDK sidecar — provides licensing and telemetry APIs
+# nameOverride controls the Deployment/Service name (set to hide Replicated branding)
+sdk:
+  enabled: true
+  nameOverride: playball-exe-sdk

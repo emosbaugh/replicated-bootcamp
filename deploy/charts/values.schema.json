@@ -233,6 +233,20 @@
         }
       },
       "required": ["secret", "url"]
+    },
+    "sdk": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "nameOverride": {
+          "type": "string"
+        }
+      }
+    },
+    "replicated-sdk": {
+      "type": "object"
     }
   },
   "allOf": [
