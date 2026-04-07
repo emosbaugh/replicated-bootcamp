@@ -37,6 +37,19 @@ postgresql:
 externalDatabase:
   url: ""
 
+# Set redis.enabled=false and provide externalRedis.url to use your own Redis
+redis:
+  enabled: true
+  auth:
+    enabled: false
+  master:
+    persistence:
+      enabled: false
+
+# Only used when redis.enabled=false
+externalRedis:
+  url: ""
+
 nextauth:
   # Required: generate with: openssl rand -base64 32
   secret: ""

@@ -46,3 +46,23 @@ as they will contain the password in plaintext.
 {{- required "externalDatabase.url is required when postgresql.enabled=false" .Values.externalDatabase.url }}
 {{- end }}
 {{- end }}
+
+{{/*
+The ClusterIP service name that the Bitnami redis subchart creates.
+Bitnami names it: <release-name>-redis-master
+*/}}
+{{- define "playball-exe.redis.serviceName" -}}
+{{- printf "%s-redis-master" .Release.Name }}
+{{- end }}
+
+{{/*
+REDIS_URL — constructed from subchart values when redis.enabled,
+or passed through from externalRedis.url.
+*/}}
+{{- define "playball-exe.redisUrl" -}}
+{{- if .Values.redis.enabled -}}
+{{- printf "redis://%s:6379" (include "playball-exe.redis.serviceName" .) }}
+{{- else -}}
+{{- required "externalRedis.url is required when redis.enabled=false" .Values.externalRedis.url }}
+{{- end }}
+{{- end }}
