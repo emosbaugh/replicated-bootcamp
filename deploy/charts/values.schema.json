@@ -244,6 +244,9 @@
           "type": "string"
         }
       }
+    },
+    "replicated-sdk": {
+      "type": "object"
     }
   },
   "allOf": [
