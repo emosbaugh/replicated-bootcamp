@@ -55,11 +55,20 @@ Then pass the image coordinates when installing (see below).
 
 ## Install the Helm Chart
 
+Images are proxied through `images.emosbaugh.be`, which requires authentication using your license ID. The `enterprise-pull-secret` is normally created automatically when installing via the Replicated OCI registry, but for local testing you must generate and pass `global.replicated.dockerconfigjson` yourself:
+
+```bash
+DOCKER_CONFIG=$(echo -n "{\"auths\":{\"images.emosbaugh.be\":{\"auth\":\"$(echo -n "${REPLICATED_LICENSE_ID}:${REPLICATED_LICENSE_ID}" | base64)\"}}}" | base64)
+```
+
+Then install:
+
 ```bash
 helm install playball deploy/charts \
   --set nextauth.secret="$(openssl rand -base64 32)" \
   --set service.type=NodePort \
   --set sdk.integration.licenseID="${REPLICATED_LICENSE_ID}" \
+  --set global.replicated.dockerconfigjson="${DOCKER_CONFIG}" \
   --wait --timeout 5m
 ```
 
@@ -70,6 +79,7 @@ helm install playball deploy/charts \
   --set nextauth.secret="$(openssl rand -base64 32)" \
   --set service.type=NodePort \
   --set sdk.integration.licenseID="${REPLICATED_LICENSE_ID}" \
+  --set global.replicated.dockerconfigjson="${DOCKER_CONFIG}" \
   --set image.repository=ttl.sh/playball-exe-${TAG} \
   --set image.tag=2h \
   --wait --timeout 5m
