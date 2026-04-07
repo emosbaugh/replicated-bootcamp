@@ -10,8 +10,39 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Helm lint
+        run: helm lint deploy/charts --set nextauth.secret=test
+
+      - name: Install Replicated CLI
+        run: |
+          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
+            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
+          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
+            -o replicated.tar.gz
+          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
+          sudo mv replicated /usr/local/bin/replicated
+
+      - name: Replicated release lint
+        run: replicated release lint --chart ./deploy/charts
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+          REPLICATED_APP: playball-exe
+
   e2e:
-    needs: build
+    needs: [build, lint]
     uses: ./.github/workflows/e2e.yml
     with:
       image-tag: pr-${{ github.event.pull_request.number }}
