@@ -30,7 +30,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Package Helm chart
-        run: helm package deploy/charts -d /tmp
+        run: helm package deploy/charts -d /tmp --version "0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}"
 
       - name: Create and promote Replicated release
         id: create-release
@@ -38,9 +38,9 @@ jobs:
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          chart: /tmp/playball-exe-0.1.0.tgz
+          chart: /tmp/playball-exe-0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}.tgz
           promote-channel: pr-${{ inputs.pr-number }}
-          version: pr-${{ inputs.pr-number }}-${{ github.run_number }}
+          version: 0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}
 
       - name: Create test customer
         id: create-customer
