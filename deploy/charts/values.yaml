@@ -15,11 +15,25 @@ ingress:
   enabled: false
   className: ""
   hostname: ""
-  # tls:
-  #   - secretName: playball-exe-tls
-  #     hosts:
-  #       - playball.example.com
-  tls: []
+
+tls:
+  enabled: false
+  # mode: auto | manual | self-signed
+  mode: auto
+
+  auto:
+    issuerRef:
+      name: ""             # required when mode=auto (e.g. letsencrypt-prod)
+      kind: ClusterIssuer  # ClusterIssuer | Issuer
+
+  manual:
+    # Option 1: reference a pre-existing kubernetes.io/tls Secret
+    secretName: ""
+    # Option 2: provide cert and key PEM directly (mutually exclusive with secretName)
+    cert: ""
+    key: ""
+
+# NOTE: when tls.enabled=true, update nextauth.url to https://<hostname>
 
 # Set postgresql.enabled=false and provide externalDatabase.url to use your own PostgreSQL
 postgresql:
@@ -41,3 +55,7 @@ nextauth:
   # Required: generate with: openssl rand -base64 32
   secret: ""
   url: "http://localhost:3000"
+
+certmanager:
+  enabled: false
+  installCRDs: true
