@@ -2,8 +2,14 @@ export type Outcome =
   | 'HR' | 'TRIPLE' | 'DOUBLE' | 'SINGLE'
   | 'WALK' | 'STRIKEOUT' | 'GROUNDOUT' | 'FLYOUT'
 
-// 2d6 outcome table. Rolls 2-12, mapping to baseball outcomes.
-// Higher rolls → hits/extra bases; lower rolls → outs.
+export type AtBatResult = {
+  outcome: Outcome
+  die1: number
+  die2: number
+  adjusted: number
+  net: number
+}
+
 const OUTCOME_TABLE: Record<number, Outcome> = {
   2:  'STRIKEOUT',
   3:  'STRIKEOUT',
@@ -18,24 +24,20 @@ const OUTCOME_TABLE: Record<number, Outcome> = {
   12: 'HR',
 }
 
-function rollDice(): number {
-  return (
-    Math.floor(Math.random() * 6) + 1 +
-    Math.floor(Math.random() * 6) + 1
-  )
+function rollDice(): [number, number] {
+  const die1 = Math.floor(Math.random() * 6) + 1
+  const die2 = Math.floor(Math.random() * 6) + 1
+  return [die1, die2]
 }
 
-// contact 1–10 → adjustment −2 to +2
 function contactBonus(contact: number): number {
   return Math.round((contact - 5.5) / 2.25)
 }
 
-// power 1–10 → adjustment −1 to +1
 function powerBonus(power: number): number {
   return Math.round((power - 5.5) / 4.5)
 }
 
-// pitching 1–10 → penalty 0 to 2 (good pitcher lowers roll)
 function pitcherPenalty(pitching: number): number {
   return Math.round((pitching - 1) / 4.5)
 }
@@ -43,12 +45,19 @@ function pitcherPenalty(pitching: number): number {
 export function resolveAtBat(
   batter: { contact: number; power: number },
   pitcher: { pitching: number }
-): Outcome {
-  const roll = rollDice()
-  const adj =
+): AtBatResult {
+  const [die1, die2] = rollDice()
+  const roll = die1 + die2
+  const net =
     contactBonus(batter.contact) +
     powerBonus(batter.power) -
     pitcherPenalty(pitcher.pitching)
-  const adjusted = Math.max(2, Math.min(12, roll + adj))
-  return OUTCOME_TABLE[adjusted]
+  const adjusted = Math.max(2, Math.min(12, roll + net))
+  return {
+    outcome: OUTCOME_TABLE[adjusted],
+    die1,
+    die2,
+    adjusted,
+    net: net || 0,
+  }
 }

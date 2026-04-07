@@ -31,13 +31,13 @@ export function runCpuHalfInning(
 
   while (outs < 3) {
     const batter = lineup[position % 9]
-    const outcome = resolveAtBat(batter, pitcher)
-    const result = advanceBases(outcome, bases, batter.id)
+    const atBatResult = resolveAtBat(batter, pitcher)
+    const result = advanceBases(atBatResult.outcome, bases, batter.id)
 
     bases = result.newBases
     score += result.runsScored
     if (result.outRecorded) outs++
-    log.push(describePlay(batter.name, outcome, result.runsScored))
+    log.push(describePlay(batter.name, atBatResult.outcome, result.runsScored))
     position++
   }
 

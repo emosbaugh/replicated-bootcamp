@@ -63,7 +63,8 @@ export async function POST(req: NextRequest) {
       // User at-bat
       const batter = batters[lineupPos % batters.length]
       const mlp = batter.mlbPlayer
-      const outcome = resolveAtBat({ contact: mlp.contact, power: mlp.power }, cpuPitcher)
+      const atBatResult = resolveAtBat({ contact: mlp.contact, power: mlp.power }, cpuPitcher)
+      const outcome = atBatResult.outcome
       const basesResult = advanceBases(outcome, bases, batter.id)
 
       const isHit = ['SINGLE', 'DOUBLE', 'TRIPLE', 'HR'].includes(outcome)

@@ -46,10 +46,11 @@ export async function POST(req: NextRequest) {
     const cpuPitcher = game.cpuPitcher as unknown as CpuPitcher
 
     // Resolve the at-bat
-    const outcome = resolveAtBat(
+    const atBatResult = resolveAtBat(
       { contact: mlp.contact, power: mlp.power },
       cpuPitcher
     )
+    const outcome = atBatResult.outcome
 
     const currentBases = game.runnersOnBase as unknown as Bases
     const basesResult = advanceBases(outcome, currentBases, currentBatter.id)
