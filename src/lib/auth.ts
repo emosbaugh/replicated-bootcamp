@@ -1,12 +1,9 @@
 import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
-import { redis } from '@/lib/redis'
-import { createRedisSessionAdapter } from '@/lib/redis-session-adapter'
 import bcrypt from 'bcryptjs'
 
 export const authOptions: AuthOptions = {
-  adapter: createRedisSessionAdapter(redis, prisma),
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -26,11 +23,15 @@ export const authOptions: AuthOptions = {
       },
     }),
   ],
-  session: { strategy: 'database' },
+  session: { strategy: 'jwt' },
   pages: { signIn: '/' },
   callbacks: {
-    session({ session, user }) {
-      if (user && session.user) session.user.id = user.id
+    jwt({ token, user }) {
+      if (user) token.id = user.id
+      return token
+    },
+    session({ session, token }) {
+      if (token && session.user) session.user.id = token.id as string
       return session
     },
   },
