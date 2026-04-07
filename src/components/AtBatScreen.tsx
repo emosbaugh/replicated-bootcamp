@@ -18,7 +18,10 @@ interface Props {
 function contactBonus(c: number) { return Math.round((c - 5.5) / 2.25) }
 function powerBonus(p: number) { return Math.round((p - 5.5) / 4.5) }
 function pitcherPenalty(p: number) { return Math.round((p - 1) / 4.5) }
-function statBar(v: number) { return '█'.repeat(v) + '░'.repeat(10 - v) }
+function statBar(v: number) {
+  const clamped = Math.max(0, Math.min(10, v))
+  return '█'.repeat(clamped) + '░'.repeat(10 - clamped)
+}
 function sgn(n: number) { return (n >= 0 ? '+' : '') + n }
 function rd() { return Math.ceil(Math.random() * 6) }
 
@@ -60,11 +63,11 @@ export function AtBatScreen({ batter, lastRoll, onDone }: Props) {
       const t = setTimeout(() => setPhase('done'), 700)
       return () => clearTimeout(t)
     }
-    if (phase === 'done') {
+    if (phase === 'done' && !showPopup) {
       const t = setTimeout(onDone, 2000)
       return () => clearTimeout(t)
     }
-  }, [phase, onDone])
+  }, [phase, onDone, showPopup])
 
   const cb = contactBonus(batter.contact)
   const pb = powerBonus(batter.power)
