@@ -18,7 +18,7 @@ export async function sendCustomMetrics(): Promise<void> {
     const gamesWon = gameResults.find((r) => r.result === 'user_win')?._count.id ?? 0
     const gamesLost = gameResults.find((r) => r.result === 'cpu_win')?._count.id ?? 0
 
-    await fetch(`${sdkUrl}/api/v1/app/custom-metrics`, {
+    const res = await fetch(`${sdkUrl}/api/v1/app/custom-metrics`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -30,6 +30,9 @@ export async function sendCustomMetrics(): Promise<void> {
         },
       }),
     })
+    if (!res.ok) {
+      console.error('[metrics] SDK returned', res.status)
+    }
   } catch (err) {
     console.error('[metrics] failed to send custom metrics', err)
   }
