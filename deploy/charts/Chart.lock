@@ -2,5 +2,8 @@ dependencies:
 - name: postgresql
   repository: oci://registry-1.docker.io/bitnamicharts
   version: 18.5.15
-digest: sha256:0b11efc1f11cb84f58ac0f9d590b7ade736d7bd9229bf79b4ffbf3c8780f598f
-generated: "2026-04-06T12:40:53.743662-07:00"
+- name: cert-manager
+  repository: https://charts.jetstack.io
+  version: v1.20.1
+digest: sha256:a092be03fba28f36c0b81bf92d7001915e476d6a7faa5f938fb32d34e60413e4
+generated: "2026-04-07T11:05:14.915155-07:00"
