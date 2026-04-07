@@ -1,11 +1,18 @@
 import type { Adapter, AdapterUser, AdapterSession } from 'next-auth/adapters'
 import type { Redis } from 'ioredis'
-import type { PrismaClient } from '@prisma/client'
 
 const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60 // 30 days
 
 type MinimalRedis = Pick<Redis, 'get' | 'set' | 'del'>
-type MinimalPrisma = Pick<PrismaClient, 'user'>
+type MinimalPrisma = {
+  user: {
+    findUnique: (args: { where: { id: string } | { email: string } }) => Promise<{
+      id: string
+      email: string
+      franchiseName: string
+    } | null>
+  }
+}
 
 function mapUser(u: { id: string; email: string; franchiseName: string }): AdapterUser {
   return {
@@ -20,7 +27,7 @@ export function createRedisSessionAdapter(redis: MinimalRedis, prisma: MinimalPr
   return {
     // --- User methods (Prisma-backed) ---
 
-    async createUser(user) {
+    async createUser(user: Omit<AdapterUser, 'id'>) {
       // Users are created via /api/auth/register, not through next-auth.
       // This path is reached when next-auth cannot find the user by email after
       // authorize() succeeds — which shouldn't happen in normal operation.
@@ -43,7 +50,7 @@ export function createRedisSessionAdapter(redis: MinimalRedis, prisma: MinimalPr
       return null // No OAuth providers
     },
 
-    async updateUser(user) {
+    async updateUser(user: Partial<AdapterUser> & Pick<AdapterUser, 'id'>) {
       const existing = await prisma.user.findUnique({ where: { id: user.id } })
       if (!existing) throw new Error(`User ${user.id} not found`)
       return mapUser(existing)
