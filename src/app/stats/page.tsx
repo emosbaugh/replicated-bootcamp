@@ -35,6 +35,8 @@ export default function StatsPage() {
       ]).then(([rosterData, { enabled }]) => {
         setRoster(rosterData)
         setAdvancedStatsEnabled(enabled)
+      }).catch(() => {
+        setAdvancedStatsEnabled(false)
       })
     }
   }, [status])
