@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { checkLicense, _resetCacheForTesting } from './license'
+import { checkLicense, _resetCacheForTesting, getLicenseField } from './license'
 
 beforeEach(() => {
   _resetCacheForTesting()
@@ -73,5 +73,37 @@ describe('checkLicense', () => {
     await checkLicense()
     await checkLicense()
     expect(mockFetch).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('getLicenseField', () => {
+  it('returns null when REPLICATED_SDK_URL is not set', async () => {
+    vi.unstubAllEnvs()
+    const result = await getLicenseField('advanced_stats_enabled')
+    expect(result).toBeNull()
+  })
+
+  it('returns the field value from the SDK response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ name: 'advanced_stats_enabled', value: 'true' }),
+    }))
+    const result = await getLicenseField('advanced_stats_enabled')
+    expect(result).toBe('true')
+    expect(global.fetch).toHaveBeenCalledWith(
+      'http://replicated:3000/api/v1/license/fields/advanced_stats_enabled'
+    )
+  })
+
+  it('returns null when the SDK returns a non-ok response', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }))
+    const result = await getLicenseField('advanced_stats_enabled')
+    expect(result).toBeNull()
+  })
+
+  it('returns null when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
+    const result = await getLicenseField('advanced_stats_enabled')
+    expect(result).toBeNull()
   })
 })
