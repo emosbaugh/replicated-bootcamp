@@ -73,7 +73,7 @@ Fails with a descriptive message on misconfiguration.
 {{- end -}}
 {{- else if eq .Values.tls.mode "manual" -}}
 {{- if and (not .Values.tls.manual.secretName) (not .Values.tls.manual.cert) -}}
-{{- fail "tls.mode=manual requires either tls.manual.secretName or tls.manual.cert (not both)" -}}
+{{- fail "tls.mode=manual requires either tls.manual.secretName or tls.manual.cert to be set" -}}
 {{- end -}}
 {{- if and .Values.tls.manual.secretName .Values.tls.manual.cert -}}
 {{- fail "tls.manual.secretName and tls.manual.cert are mutually exclusive — use one or the other" -}}

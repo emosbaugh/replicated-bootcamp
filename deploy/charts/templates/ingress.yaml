@@ -24,6 +24,9 @@ spec:
       hosts:
         - {{ required "ingress.hostname is required when ingress.enabled=true" .Values.ingress.hostname | quote }}
   {{- end }}
+  {{- if and .Values.tls.enabled (eq .Values.tls.mode "auto") (not .Values.certmanager.enabled) }}
+  # NOTE: cert-manager must be pre-installed in the cluster (certmanager.enabled=false).
+  {{- end }}
   rules:
     - host: {{ required "ingress.hostname is required when ingress.enabled=true" .Values.ingress.hostname | quote }}
       http:

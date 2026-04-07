@@ -1,5 +1,8 @@
 {{- include "playball-exe.validateTls" . -}}
 {{- if and .Values.tls.enabled (eq .Values.tls.mode "self-signed") }}
+{{- if not .Values.certmanager.enabled }}
+# NOTE: cert-manager must be pre-installed in the cluster (certmanager.enabled=false).
+{{- end }}
 apiVersion: cert-manager.io/v1
 kind: Issuer
 metadata:

@@ -162,7 +162,12 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "enabled": { "type": "boolean" },
+        "enabled": { "type": "boolean" }
+      }
+    },
+    "cert-manager": {
+      "type": "object",
+      "properties": {
         "installCRDs": { "type": "boolean" }
       }
     }

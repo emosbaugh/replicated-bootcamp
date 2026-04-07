@@ -58,4 +58,7 @@ nextauth:
 
 certmanager:
   enabled: false
+
+# Values forwarded to the cert-manager subchart (only used when certmanager.enabled=true)
+cert-manager:
   installCRDs: true
