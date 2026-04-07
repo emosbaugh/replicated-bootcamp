@@ -33,10 +33,11 @@ To test local code changes without a CI build, push a throwaway image to [ttl.sh
 
 ```bash
 TAG=$(git rev-parse --short HEAD)
-docker build -f deploy/Dockerfile -t ttl.sh/playball-exe-${TAG}:2h .
+docker build -f deploy/Dockerfile --platform linux/amd64 -t ttl.sh/playball-exe-${TAG}:2h .
 docker push ttl.sh/playball-exe-${TAG}:2h
 ```
 
+> `--platform linux/amd64` is required — CMX clusters run on amd64, but Mac builds default to arm64.
 > Choose a TTL long enough to last your test session (`:1h`, `:2h`, `:6h`, `:24h`). The image is public but ephemeral — no credentials needed.
 
 Then pass the image coordinates when installing (see below).

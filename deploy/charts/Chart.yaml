@@ -13,8 +13,8 @@ dependencies:
     version: "25.3.9"
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: redis.enabled
-  - name: replicated-sdk
-    version: "1.0.0-beta.33"
+  - name: replicated
+    version: "1.19.0"
     repository: oci://registry.replicated.com/library
     alias: sdk
     condition: sdk.enabled
