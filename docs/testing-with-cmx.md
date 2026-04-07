@@ -27,12 +27,37 @@ export KUBECONFIG=$(replicated cluster kubeconfig <cluster-id> --output-path /tm
 kubectl get nodes
 ```
 
+## Build and Push a Local Image (optional)
+
+To test local code changes without a CI build, push a throwaway image to [ttl.sh](https://ttl.sh) — an anonymous, no-auth registry that auto-deletes images when the TTL expires.
+
+```bash
+TAG=$(git rev-parse --short HEAD)
+docker build -f deploy/Dockerfile -t ttl.sh/playball-exe-${TAG}:2h .
+docker push ttl.sh/playball-exe-${TAG}:2h
+```
+
+> Choose a TTL long enough to last your test session (`:1h`, `:2h`, `:6h`, `:24h`). The image is public but ephemeral — no credentials needed.
+
+Then pass the image coordinates when installing (see below).
+
 ## Install the Helm Chart
 
 ```bash
 helm install playball deploy/charts \
   --set nextauth.secret="$(openssl rand -base64 32)" \
   --set service.type=NodePort \
+  --wait --timeout 5m
+```
+
+If you pushed a local image to ttl.sh, override the image:
+
+```bash
+helm install playball deploy/charts \
+  --set nextauth.secret="$(openssl rand -base64 32)" \
+  --set service.type=NodePort \
+  --set image.repository=ttl.sh/playball-exe-${TAG} \
+  --set image.tag=2h \
   --wait --timeout 5m
 ```
 
