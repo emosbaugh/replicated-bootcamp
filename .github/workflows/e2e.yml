@@ -68,15 +68,6 @@ jobs:
       - name: Generate nextauth secret
         run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> $GITHUB_ENV
 
-      - name: Create image pull secret
-        run: |
-          kubectl create secret docker-registry replicated-pull-secret \
-            --docker-server=images.emosbaugh.be \
-            --docker-username=${{ steps.create-customer.outputs.license-id }} \
-            --docker-password=${{ steps.create-customer.outputs.license-id }}
-        env:
-          KUBECONFIG: ${{ steps.create-cluster.outputs.cluster-kubeconfig }}
-
       - name: Install via Replicated registry
         uses: replicatedhq/replicated-actions/helm-install@v1
         with:
@@ -95,8 +86,6 @@ jobs:
               type: NodePort
             image:
               tag: ${{ inputs.image-tag }}
-            imagePullSecrets:
-              - name: replicated-pull-secret
 
       - name: Get NodePort
         id: get-nodeport

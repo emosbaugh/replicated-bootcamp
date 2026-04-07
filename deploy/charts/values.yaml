@@ -11,8 +11,9 @@ image:
 
 replicaCount: 1
 
-# Pull secret for images.emosbaugh.be proxy registry (license ID as user/password)
-imagePullSecrets: []
+# Pull secret created automatically by the Replicated SDK at install time
+imagePullSecrets:
+  - name: enterprise-pull-secret
 
 # Resource requests and limits for the main app container
 resources:
