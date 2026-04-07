@@ -1,0 +1,11 @@
+{{- include "playball-exe.validateTls" . -}}
+{{- if and .Values.tls.enabled (eq .Values.tls.mode "self-signed") }}
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-selfsigned
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+spec:
+  selfSigned: {}
+{{- end }}

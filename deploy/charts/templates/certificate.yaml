@@ -1,0 +1,16 @@
+{{- include "playball-exe.validateTls" . -}}
+{{- if and .Values.tls.enabled (eq .Values.tls.mode "self-signed") }}
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-tls
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+spec:
+  secretName: {{ include "playball-exe.fullname" . }}-tls
+  issuerRef:
+    name: {{ include "playball-exe.fullname" . }}-selfsigned
+    kind: Issuer
+  dnsNames:
+    - {{ required "ingress.hostname is required when tls.mode=self-signed" .Values.ingress.hostname | quote }}
+{{- end }}
