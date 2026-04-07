@@ -8,7 +8,7 @@ import { AtBatScreen } from '@/components/AtBatScreen'
 import type { GameState } from '@/app/api/game/types'
 
 export default function GamePage() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const router = useRouter()
   const [gameState, setGameState] = useState<GameState | null>(null)
   const [lastCpuLog, setLastCpuLog] = useState<string[]>([])
