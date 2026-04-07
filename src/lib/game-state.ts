@@ -1,9 +1,17 @@
 import { prisma } from '@/lib/db'
+import { redis } from '@/lib/redis'
 import type { GameState } from '@/app/api/game/types'
 
-// Build the GameState response shape from a Game row.
-// Loads the current batter's player info and season stats.
+const CACHE_TTL = 30 // seconds
+
 export async function buildGameState(gameId: string, userId: string): Promise<GameState | null> {
+  const cacheKey = `game-state:${gameId}`
+
+  const cached = await redis.get(cacheKey)
+  if (cached) {
+    return JSON.parse(cached) as GameState
+  }
+
   const game = await prisma.game.findFirst({
     where: { id: gameId, userId },
   })
@@ -45,7 +53,7 @@ export async function buildGameState(gameId: string, userId: string): Promise<Ga
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { franchiseName: true } })
   if (!user) return null
 
-  return {
+  const state: GameState = {
     id: game.id,
     inning: game.inning,
     halfInning: game.halfInning as 'top' | 'bot',
@@ -82,4 +90,11 @@ export async function buildGameState(gameId: string, userId: string): Promise<Ga
     },
     lastCpuLog: undefined,
   }
+
+  await redis.set(cacheKey, JSON.stringify(state), 'EX', CACHE_TTL)
+  return state
+}
+
+export async function invalidateGameStateCache(gameId: string): Promise<void> {
+  await redis.del(`game-state:${gameId}`)
 }
