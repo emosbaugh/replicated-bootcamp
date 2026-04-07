@@ -1,6 +1,11 @@
+global:
+  # Required when proxying Bitnami images through a non-official registry
+  security:
+    allowInsecureImages: true
+
 # Container image for the app (and migration init container)
 image:
-  repository: docker.io/replemos/playball.exe
+  repository: images.emosbaugh.be/proxy/playball-exe/index.docker.io/replemos/playball.exe
   tag: main
   pullPolicy: Always
 
@@ -41,6 +46,9 @@ ingress:
 # Set postgresql.enabled=false and provide externalDatabase.url to use your own PostgreSQL
 postgresql:
   enabled: true
+  image:
+    registry: images.emosbaugh.be
+    repository: proxy/playball-exe/registry-1.docker.io/bitnami/postgresql
   auth:
     database: baseball
     username: baseball
@@ -63,6 +71,9 @@ externalDatabase:
 # Set redis.enabled=false and provide externalRedis.url to use your own Redis
 redis:
   enabled: true
+  image:
+    registry: images.emosbaugh.be
+    repository: proxy/playball-exe/registry-1.docker.io/bitnami/redis
   auth:
     enabled: false
   master:
@@ -83,3 +94,6 @@ nextauth:
 sdk:
   enabled: true
   nameOverride: playball-exe-sdk
+  image:
+    registry: images.emosbaugh.be
+    repository: proxy/playball-exe/index.docker.io/replicated/replicated-sdk
