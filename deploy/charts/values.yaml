@@ -6,6 +6,23 @@ image:
 
 replicaCount: 1
 
+# Resource requests and limits for the main app container
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    memory: 512Mi
+
+# Resource requests and limits for init containers (migrate, seed)
+initContainers:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+
 service:
   # ClusterIP | LoadBalancer | NodePort
   type: ClusterIP
@@ -32,6 +49,12 @@ postgresql:
   primary:
     persistence:
       size: 1Gi
+    resources:
+      requests:
+        cpu: 100m
+        memory: 256Mi
+      limits:
+        memory: 512Mi
 
 # Only used when postgresql.enabled=false
 externalDatabase:
