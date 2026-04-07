@@ -99,4 +99,4 @@ sdk:
   nameOverride: playball-exe-sdk
   image:
     registry: images.emosbaugh.be
-    repository: proxy/playball-exe/docker.io/replicated/replicated-sdk
+    repository: library/replicated-sdk
