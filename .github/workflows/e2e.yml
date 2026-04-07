@@ -118,6 +118,7 @@ jobs:
 
       - name: Archive channel
         if: always() && steps.create-release.outcome != 'skipped'
+        continue-on-error: true
         uses: replicatedhq/replicated-actions/archive-channel@v1
         with:
           app-slug: playball-exe
@@ -128,7 +129,6 @@ jobs:
         if: always() && steps.create-customer.outcome != 'skipped'
         uses: replicatedhq/replicated-actions/archive-customer@v1
         with:
-          app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
           customer-id: ${{ steps.create-customer.outputs.customer-id }}
 
