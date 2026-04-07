@@ -15,6 +15,24 @@ spec:
         {{- include "playball-exe.selectorLabels" . | nindent 8 }}
     spec:
       initContainers:
+        - name: wait-for-db
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - node
+            - -e
+            - |
+              const net = require('net');
+              const u = new URL(process.env.DATABASE_URL);
+              const host = u.hostname, port = parseInt(u.port || '5432');
+              (function check() {
+                const s = net.createConnection(port, host);
+                s.on('connect', () => { console.log('DB ready'); s.end(); });
+                s.on('error', () => { console.log('Waiting for DB...'); setTimeout(check, 2000); });
+              })();
+          envFrom:
+            - secretRef:
+                name: {{ include "playball-exe.fullname" . }}
         - name: migrate
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
