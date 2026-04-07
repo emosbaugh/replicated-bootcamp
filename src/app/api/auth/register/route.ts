@@ -19,17 +19,19 @@ export async function POST(req: NextRequest) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
-    const user = await prisma.user.create({
-      data: {
-        email: email.toLowerCase(),
-        passwordHash,
-        franchiseName,
-      },
+    let mlbTeamName: string, mlbTeamAbbr: string
+    await prisma.$transaction(async (tx) => {
+      const user = await tx.user.create({
+        data: {
+          email: email.toLowerCase(),
+          passwordHash,
+          franchiseName,
+        },
+      })
+      ;({ mlbTeamName, mlbTeamAbbr } = await draftTeam(user.id, tx))
     })
 
-    const { mlbTeamName, mlbTeamAbbr } = await draftTeam(user.id)
-
-    return NextResponse.json({ success: true, mlbTeamName, mlbTeamAbbr })
+    return NextResponse.json({ success: true, mlbTeamName: mlbTeamName!, mlbTeamAbbr: mlbTeamAbbr! })
   } catch (err) {
     console.error('[register]', err)
     return NextResponse.json({ error: 'Registration failed' }, { status: 500 })

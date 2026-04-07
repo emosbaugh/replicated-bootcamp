@@ -1,0 +1,78 @@
+name: E2E Test on CMX
+
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create CMX cluster
+        id: create-cluster
+        uses: replicatedhq/replicated-actions/create-cluster@v1
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          kubernetes-distribution: k3s
+          kubernetes-version: "1.32"
+          cluster-name: ci-e2e-${{ github.run_id }}
+          ttl: 1h
+          export-kubeconfig: "true"
+
+      - name: Install Helm chart
+        run: |
+          helm install playball deploy/charts \
+            --set nextauth.secret="$(openssl rand -base64 32)" \
+            --set service.type=NodePort \
+            --set image.tag=${{ inputs.image-tag }} \
+            --dependency-update \
+            --wait --timeout 10m
+
+      - name: Get NodePort
+        id: get-nodeport
+        run: echo "port=$(kubectl get svc playball -o jsonpath='{.spec.ports[0].nodePort}')" >> $GITHUB_OUTPUT
+
+      - name: Expose app
+        id: expose-port
+        uses: replicatedhq/replicated-actions/expose-port@v1
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
+          port: ${{ steps.get-nodeport.outputs.port }}
+          protocols: http,https
+
+      - name: Wait for app to be reachable
+        run: |
+          APP_URL="https://${{ steps.expose-port.outputs.hostname }}"
+          until curl -sf --max-time 5 "$APP_URL" > /dev/null 2>&1; do
+            echo "Waiting for app..."
+            sleep 10
+          done
+
+      - name: Test registration
+        run: |
+          APP_URL="https://${{ steps.expose-port.outputs.hostname }}"
+          RESPONSE=$(curl -sf -X POST "$APP_URL/api/auth/register" \
+            -H "Content-Type: application/json" \
+            -d '{"email":"ci@example.com","password":"cipassword123","franchiseName":"CI Franchise"}')
+          echo "$RESPONSE"
+          echo "$RESPONSE" | jq -e '.success == true'
+
+      - name: Delete cluster
+        if: always()
+        uses: replicatedhq/replicated-actions/remove-cluster@v1
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          cluster-id: ${{ steps.create-cluster.outputs.cluster-id }}
