@@ -64,16 +64,8 @@ jobs:
           ttl: 1h
           export-kubeconfig: "true"
 
-      - name: Write values override
-        run: |
-          cat > /tmp/ci-values.yaml <<EOF
-          nextauth:
-            secret: "$(openssl rand -base64 32)"
-          service:
-            type: NodePort
-          image:
-            tag: ${{ inputs.image-tag }}
-          EOF
+      - name: Generate nextauth secret
+        run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> $GITHUB_ENV
 
       - name: Install via Replicated registry
         uses: replicatedhq/replicated-actions/helm-install@v1
@@ -86,7 +78,13 @@ jobs:
           kubeconfig: ${{ steps.create-cluster.outputs.cluster-kubeconfig }}
           registry-username: ${{ steps.create-customer.outputs.license-id }}
           registry-password: ${{ steps.create-customer.outputs.license-id }}
-          values: /tmp/ci-values.yaml
+          values: |
+            nextauth:
+              secret: "${{ env.NEXTAUTH_SECRET }}"
+            service:
+              type: NodePort
+            image:
+              tag: ${{ inputs.image-tag }}
 
       - name: Get NodePort
         id: get-nodeport
