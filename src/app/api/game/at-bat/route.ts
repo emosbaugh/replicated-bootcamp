@@ -5,7 +5,7 @@ import { prisma } from '@/lib/db'
 import { resolveAtBat } from '@/lib/game-engine'
 import { advanceBases, describePlay, type Bases } from '@/lib/baserunning'
 import { runCpuHalfInning, type CpuBatter, type CpuPitcher } from '@/lib/cpu-runner'
-import { buildGameState } from '@/lib/game-state'
+import { buildGameState, invalidateGameStateCache } from '@/lib/game-state'
 import { finalizeGame } from '@/lib/game-end'
 
 export async function POST(req: NextRequest) {
@@ -23,6 +23,8 @@ export async function POST(req: NextRequest) {
     if (!game) {
       return NextResponse.json({ error: 'No active game' }, { status: 404 })
     }
+
+    await invalidateGameStateCache(game.id)
 
     // Load user's batting lineup
     const team = await prisma.team.findUnique({

@@ -22,10 +22,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npx prisma generate
-# DATABASE_URL must be set at build time because Next.js collects page data
-# (executes route modules) during the build step. A placeholder is sufficient
-# since no real DB connection is made during build.
-RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" npm run build
+# DATABASE_URL and REDIS_URL must be set at build time because Next.js collects
+# page data (executes route modules) during the build step. Placeholders are
+# sufficient since no real connections are made during build.
+RUN DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder" \
+    REDIS_URL="redis://localhost:6379" \
+    npm run build
 # Pre-compile seed.ts to JS so the runner image doesn't need ts-node or typescript
 RUN node_modules/.bin/tsc \
     --module commonjs \
