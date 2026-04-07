@@ -116,6 +116,28 @@ jobs:
           echo "$RESPONSE"
           echo "$RESPONSE" | jq -e '.success == true'
 
+      - name: Install support-bundle CLI
+        if: always() && steps.create-cluster.outcome != 'skipped'
+        run: |
+          curl -fsSL https://github.com/replicatedhq/troubleshoot/releases/latest/download/support-bundle_linux_amd64.tar.gz \
+            | tar xz -C /tmp support-bundle
+          sudo mv /tmp/support-bundle /usr/local/bin/support-bundle
+
+      - name: Collect support bundle
+        if: always() && steps.create-cluster.outcome != 'skipped'
+        run: |
+          support-bundle --load-cluster-specs \
+            --output-file /tmp/support-bundle.tar.gz \
+            --interactive=false
+
+      - name: Upload support bundle
+        if: always() && steps.create-cluster.outcome != 'skipped'
+        uses: actions/upload-artifact@v4
+        with:
+          name: support-bundle-${{ github.run_id }}
+          path: /tmp/support-bundle.tar.gz
+          retention-days: 7
+
       - name: Archive customer
         if: always() && steps.create-customer.outcome != 'skipped'
         uses: replicatedhq/replicated-actions/archive-customer@v1
