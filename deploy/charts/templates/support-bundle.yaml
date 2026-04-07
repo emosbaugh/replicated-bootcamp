@@ -1,0 +1,32 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+    troubleshoot.sh/kind: support-bundle
+stringData:
+  support-bundle-spec: |
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: SupportBundle
+    metadata:
+      name: {{ include "playball-exe.fullname" . }}
+    spec:
+      collectors:
+        - logs:
+            name: app
+            namespace: {{ .Release.Namespace }}
+            selector:
+              - app.kubernetes.io/name=playball-exe
+        - logs:
+            name: postgres
+            namespace: {{ .Release.Namespace }}
+            selector:
+              - app.kubernetes.io/name=postgresql
+              - app.kubernetes.io/instance={{ .Release.Name }}
+        - logs:
+            name: redis
+            namespace: {{ .Release.Namespace }}
+            selector:
+              - app.kubernetes.io/name=redis
+              - app.kubernetes.io/instance={{ .Release.Name }}
