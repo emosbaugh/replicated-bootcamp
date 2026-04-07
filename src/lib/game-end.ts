@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { sendCustomMetrics } from '@/lib/metrics'
 
 // Called when a game completes.
 // Reads game.gameStats and increments PlayerSeason for each user player.
@@ -46,4 +47,6 @@ export async function finalizeGame(gameId: string, userId: string): Promise<void
       },
     })
   }
+
+  sendCustomMetrics()
 }

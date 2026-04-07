@@ -66,3 +66,11 @@ or passed through from externalRedis.url.
 {{- required "externalRedis.url is required when redis.enabled=false" .Values.externalRedis.url }}
 {{- end }}
 {{- end }}
+
+{{/*
+Replicated SDK service URL for custom metrics.
+Uses only the nameOverride, which is the Kubernetes service name created by the SDK subchart.
+*/}}
+{{- define "playball-exe.sdkUrl" -}}
+{{- printf "http://%s:3000" .Values.sdk.nameOverride }}
+{{- end }}

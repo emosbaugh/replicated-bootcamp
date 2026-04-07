@@ -2,6 +2,7 @@ import { AuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
 import { prisma } from '@/lib/db'
 import bcrypt from 'bcryptjs'
+import { sendCustomMetrics } from '@/lib/metrics'
 
 export const authOptions: AuthOptions = {
   providers: [
@@ -19,6 +20,7 @@ export const authOptions: AuthOptions = {
         if (!user) return null
         const valid = await bcrypt.compare(credentials.password, user.passwordHash)
         if (!valid) return null
+        sendCustomMetrics()
         return { id: user.id, email: user.email, name: user.franchiseName }
       },
     }),
