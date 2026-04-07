@@ -14,7 +14,10 @@ export function UpdateBanner() {
     async function checkForUpdates() {
       try {
         const res = await fetch('/api/updates')
-        if (!res.ok) return
+        if (!res.ok) {
+          console.warn('[updates] unexpected response', res.status)
+          return
+        }
         const data: Update[] = await res.json()
         if (data.length > 0) {
           setUpdate(data[0])
