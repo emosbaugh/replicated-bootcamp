@@ -27,7 +27,7 @@ spec:
               const host = u.hostname, port = parseInt(u.port || '5432');
               (function check() {
                 const s = net.createConnection(port, host);
-                s.on('connect', () => { console.log('DB ready'); s.end(); });
+                s.on('connect', () => { console.log('DB ready'); s.end(); process.exit(0); });
                 s.on('error', () => { console.log('Waiting for DB...'); setTimeout(check, 2000); });
               })();
           envFrom:
