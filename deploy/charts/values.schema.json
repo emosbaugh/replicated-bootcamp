@@ -179,6 +179,44 @@
         }
       }
     },
+    "redis": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "auth": {
+          "type": "object",
+          "properties": {
+            "enabled": {
+              "type": "boolean"
+            }
+          }
+        },
+        "master": {
+          "type": "object",
+          "properties": {
+            "persistence": {
+              "type": "object",
+              "properties": {
+                "enabled": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "externalRedis": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string"
+        }
+      }
+    },
     "nextauth": {
       "type": "object",
       "additionalProperties": false,
@@ -194,28 +232,58 @@
       "required": ["secret", "url"]
     }
   },
-  "if": {
-    "properties": {
-      "postgresql": {
+  "allOf": [
+    {
+      "if": {
         "properties": {
-          "enabled": { "const": false }
-        },
-        "required": ["enabled"]
-      }
-    }
-  },
-  "then": {
-    "properties": {
-      "externalDatabase": {
+          "postgresql": {
+            "properties": {
+              "enabled": { "const": false }
+            },
+            "required": ["enabled"]
+          }
+        }
+      },
+      "then": {
         "properties": {
-          "url": {
-            "type": "string",
-            "minLength": 1
+          "externalDatabase": {
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["url"]
           }
         },
-        "required": ["url"]
+        "required": ["externalDatabase"]
       }
     },
-    "required": ["externalDatabase"]
-  }
+    {
+      "if": {
+        "properties": {
+          "redis": {
+            "properties": {
+              "enabled": { "const": false }
+            },
+            "required": ["enabled"]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "externalRedis": {
+            "properties": {
+              "url": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": ["url"]
+          }
+        },
+        "required": ["externalRedis"]
+      }
+    }
+  ]
 }
