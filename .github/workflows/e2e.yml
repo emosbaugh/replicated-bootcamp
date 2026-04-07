@@ -129,7 +129,7 @@ jobs:
         if: always() && steps.create-cluster.outcome != 'skipped' && steps.install-support-bundle.outcome == 'success'
         run: |
           support-bundle --load-cluster-specs \
-            --output-file /tmp/support-bundle.tar.gz \
+            --output /tmp/support-bundle \
             --interactive=false
 
       - name: Upload support bundle
