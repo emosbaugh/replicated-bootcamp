@@ -58,6 +58,6 @@ export function resolveAtBat(
     die1,
     die2,
     adjusted,
-    net,
+    net: net + 0,  // normalize -0 to 0 (Math.round can produce -0)
   }
 }
