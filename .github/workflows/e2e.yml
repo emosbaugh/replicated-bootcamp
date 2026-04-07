@@ -20,6 +20,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Create and promote Replicated release
+        id: create-release
+        uses: replicatedhq/replicated-actions/create-release@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          chart: ./deploy/charts
+          promote-channel: pr-${{ github.event.pull_request.number }}
+          version: pr-${{ github.event.pull_request.number }}-${{ github.run_number }}
+
+      - name: Create test customer
+        id: create-customer
+        uses: replicatedhq/replicated-actions/create-customer@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          customer-name: ci-pr-${{ github.event.pull_request.number }}-${{ github.run_number }}
+          license-type: dev
+          channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+
       - name: Create CMX cluster
         id: create-cluster
         uses: replicatedhq/replicated-actions/create-cluster@v1
@@ -31,14 +51,27 @@ jobs:
           ttl: 1h
           export-kubeconfig: "true"
 
-      - name: Install Helm chart
+      - name: Write values override
         run: |
-          helm install playball deploy/charts \
-            --set nextauth.secret="$(openssl rand -base64 32)" \
-            --set service.type=NodePort \
-            --set image.tag=${{ inputs.image-tag }} \
-            --dependency-update \
-            --wait --timeout 10m
+          cat > /tmp/ci-values.yaml <<EOF
+          nextauth:
+            secret: "$(openssl rand -base64 32)"
+          service:
+            type: NodePort
+          image:
+            tag: ${{ inputs.image-tag }}
+          EOF
+
+      - name: Install via Replicated registry
+        uses: replicatedhq/replicated-actions/helm-install@v1
+        with:
+          chart: oci://registry.replicated.com/playball-exe/${{ steps.create-release.outputs.channel-slug }}/playball-exe
+          name: playball
+          namespace: default
+          kubeconfig: ${{ steps.create-cluster.outputs.cluster-kubeconfig }}
+          registry-username: ${{ steps.create-customer.outputs.license-id }}
+          registry-password: ${{ steps.create-customer.outputs.license-id }}
+          values: /tmp/ci-values.yaml
 
       - name: Get NodePort
         id: get-nodeport
@@ -69,6 +102,22 @@ jobs:
             -d '{"email":"ci@example.com","password":"cipassword123","franchiseName":"CI Franchise"}')
           echo "$RESPONSE"
           echo "$RESPONSE" | jq -e '.success == true'
+
+      - name: Archive channel
+        if: always()
+        uses: replicatedhq/replicated-actions/archive-channel@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+
+      - name: Archive customer
+        if: always()
+        uses: replicatedhq/replicated-actions/archive-customer@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          customer-id: ${{ steps.create-customer.outputs.customer-id }}
 
       - name: Delete cluster
         if: always()
