@@ -47,4 +47,5 @@ jobs:
     uses: ./.github/workflows/e2e.yml
     with:
       image-tag: pr-${{ github.event.pull_request.number }}
+      pr-number: ${{ github.event.pull_request.number }}
     secrets: inherit

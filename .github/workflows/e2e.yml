@@ -7,12 +7,21 @@ on:
         description: Docker image tag to deploy
         required: true
         type: string
+      pr-number:
+        description: Pull request number
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       image-tag:
         description: Docker image tag to deploy
         required: true
         type: string
+      pr-number:
+        description: Pull request number
+        required: false
+        type: string
+        default: 'manual'
 
 jobs:
   e2e:
@@ -27,8 +36,8 @@ jobs:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
           chart: ./deploy/charts
-          promote-channel: pr-${{ github.event.pull_request.number }}
-          version: pr-${{ github.event.pull_request.number }}-${{ github.run_number }}
+          promote-channel: pr-${{ inputs.pr-number }}
+          version: pr-${{ inputs.pr-number }}-${{ github.run_number }}
 
       - name: Create test customer
         id: create-customer
@@ -36,7 +45,7 @@ jobs:
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          customer-name: ci-pr-${{ github.event.pull_request.number }}-${{ github.run_number }}
+          customer-name: ci-pr-${{ inputs.pr-number }}-${{ github.run_number }}
           license-type: dev
           channel-slug: ${{ steps.create-release.outputs.channel-slug }}
 
@@ -104,7 +113,7 @@ jobs:
           echo "$RESPONSE" | jq -e '.success == true'
 
       - name: Archive channel
-        if: always()
+        if: always() && steps.create-release.outputs.channel-slug != ''
         uses: replicatedhq/replicated-actions/archive-channel@v1
         with:
           app-slug: playball-exe
@@ -112,7 +121,7 @@ jobs:
           channel-slug: ${{ steps.create-release.outputs.channel-slug }}
 
       - name: Archive customer
-        if: always()
+        if: always() && steps.create-customer.outputs.customer-id != ''
         uses: replicatedhq/replicated-actions/archive-customer@v1
         with:
           app-slug: playball-exe
@@ -120,7 +129,7 @@ jobs:
           customer-id: ${{ steps.create-customer.outputs.customer-id }}
 
       - name: Delete cluster
-        if: always()
+        if: always() && steps.create-cluster.outputs.cluster-id != ''
         uses: replicatedhq/replicated-actions/remove-cluster@v1
         with:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
