@@ -78,6 +78,7 @@ jobs:
       - name: Install via Replicated registry
         uses: replicatedhq/replicated-actions/helm-install@v1
         with:
+          helm-path: helm
           chart: oci://registry.replicated.com/playball-exe/${{ steps.create-release.outputs.channel-slug }}/playball-exe
           name: playball
           namespace: default
