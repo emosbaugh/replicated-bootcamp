@@ -8,12 +8,8 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "repository": {
-          "type": "string"
-        },
-        "tag": {
-          "type": "string"
-        },
+        "repository": { "type": "string" },
+        "tag": { "type": "string" },
         "pullPolicy": {
           "type": "string",
           "enum": ["Always", "IfNotPresent", "Never"]
@@ -43,67 +39,91 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "enabled": {
-          "type": "boolean"
+        "enabled": { "type": "boolean" },
+        "className": { "type": "string" },
+        "hostname": { "type": "string" }
+      },
+      "if": {
+        "properties": { "enabled": { "const": true } },
+        "required": ["enabled"]
+      },
+      "then": {
+        "properties": {
+          "hostname": { "type": "string", "minLength": 1 }
         },
-        "className": {
-          "type": "string"
+        "required": ["hostname"]
+      }
+    },
+    "tls": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "mode": {
+          "type": "string",
+          "enum": ["auto", "manual", "self-signed"]
         },
-        "hostname": {
-          "type": "string"
-        },
-        "tls": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "secretName": {
-                "type": "string"
-              },
-              "hosts": {
-                "type": "array",
-                "items": {
-                  "type": "string"
+        "auto": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "issuerRef": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "name": { "type": "string" },
+                "kind": {
+                  "type": "string",
+                  "enum": ["ClusterIssuer", "Issuer"]
                 }
               }
             }
+          }
+        },
+        "manual": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "secretName": { "type": "string" },
+            "cert": { "type": "string" },
+            "key": { "type": "string" }
           }
         }
       },
       "if": {
         "properties": {
-          "enabled": { "const": true }
+          "enabled": { "const": true },
+          "mode": { "const": "auto" }
         },
-        "required": ["enabled"]
+        "required": ["enabled", "mode"]
       },
       "then": {
         "properties": {
-          "hostname": {
-            "type": "string",
-            "minLength": 1
+          "auto": {
+            "properties": {
+              "issuerRef": {
+                "properties": {
+                  "name": { "type": "string", "minLength": 1 }
+                },
+                "required": ["name"]
+              }
+            },
+            "required": ["issuerRef"]
           }
         },
-        "required": ["hostname"]
+        "required": ["auto"]
       }
     },
     "postgresql": {
       "type": "object",
       "properties": {
-        "enabled": {
-          "type": "boolean"
-        },
+        "enabled": { "type": "boolean" },
         "auth": {
           "type": "object",
           "properties": {
-            "database": {
-              "type": "string"
-            },
-            "username": {
-              "type": "string"
-            },
-            "password": {
-              "type": "string"
-            }
+            "database": { "type": "string" },
+            "username": { "type": "string" },
+            "password": { "type": "string" }
           }
         },
         "primary": {
@@ -126,32 +146,31 @@
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "url": {
-          "type": "string"
-        }
+        "url": { "type": "string" }
       }
     },
     "nextauth": {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "secret": {
-          "type": "string"
-        },
-        "url": {
-          "type": "string",
-          "format": "uri"
-        }
+        "secret": { "type": "string" },
+        "url": { "type": "string", "format": "uri" }
       },
       "required": ["secret", "url"]
+    },
+    "certmanager": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "installCRDs": { "type": "boolean" }
+      }
     }
   },
   "if": {
     "properties": {
       "postgresql": {
-        "properties": {
-          "enabled": { "const": false }
-        },
+        "properties": { "enabled": { "const": false } },
         "required": ["enabled"]
       }
     }
@@ -160,10 +179,7 @@
     "properties": {
       "externalDatabase": {
         "properties": {
-          "url": {
-            "type": "string",
-            "minLength": 1
-          }
+          "url": { "type": "string", "minLength": 1 }
         },
         "required": ["url"]
       }
