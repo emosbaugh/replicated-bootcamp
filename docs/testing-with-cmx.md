@@ -18,6 +18,7 @@ export REPLICATED_LICENSE_ID=<your-license-id>
 
 > **Note for AI assistants:** The Bash tool does not inherit shell environment variables. When running `helm install`, pass the license ID literally rather than relying on `${REPLICATED_LICENSE_ID}` expansion.
 
+
 ## Create a Cluster
 
 ```bash
