@@ -29,13 +29,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Package Helm chart
+        run: helm package deploy/charts -d /tmp
+
       - name: Create and promote Replicated release
         id: create-release
         uses: replicatedhq/replicated-actions/create-release@v1
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          chart: ./deploy/charts
+          chart: /tmp/playball-exe-0.1.0.tgz
           promote-channel: pr-${{ inputs.pr-number }}
           version: pr-${{ inputs.pr-number }}-${{ github.run_number }}
 
