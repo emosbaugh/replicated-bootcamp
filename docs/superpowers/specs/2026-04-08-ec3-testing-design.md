@@ -6,9 +6,9 @@
 
 Two deliverables:
 1. `docs/testing-ec3.md` — manual testing guide for EC v3 installs on CMX VMs
-2. `.github/workflows/e2e-ec3.yml` — CI e2e workflow that verifies a headless EC v3 install succeeds
+2. `.github/workflows/e2e-ec3.yml` + changes to `e2e.yml` and `build-test.yml` — CI e2e that runs Helm and EC v3 tests in parallel against a shared release
 
-The success criteria for the CI test is a clean install exit (non-zero exit code = failure). HTTP verification is out of scope for this version.
+The success criteria for the CI EC3 test is a clean install exit (non-zero exit code = failure). HTTP verification is out of scope for this version.
 
 ---
 
@@ -62,48 +62,53 @@ Follows the same structure as `docs/testing-with-cmx.md`.
 
 ---
 
-## `.github/workflows/e2e-ec3.yml`
+## CI Workflow Restructure
 
-### Trigger
+### Shared release model
 
-`workflow_call` with inputs matching `e2e.yml` (`image-tag`, `pr-number`), plus `workflow_dispatch` for manual runs.
+Release creation moves out of `e2e.yml` into `build-test.yml` as a dedicated `release` job. Both `e2e` and `e2e-ec3` run in parallel against that shared release, each creating their own customer. Channel archiving happens in `build-test.yml` after both jobs complete.
 
-### Job: `e2e-ec3`
-
-`timeout-minutes: 30` (EC install takes significantly longer than a Helm install).
-
-**Steps:**
-
-1. Checkout
-2. Package chart + create release (`yaml-dir: deploy/manifests`) — same as `e2e.yml`
-3. Create customer with `--embedded-cluster-download` flag; capture `license-id` output
-4. Generate SSH keypair — `ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N "" -C "ci@cmx"`
-5. Generate installer password — `openssl rand -hex 16`, store in `$INSTALLER_PASSWORD`
-6. Create CMX VM (ubuntu 24.04, ttl 1h, `--ssh-public-key .ssh/id_ed25519.pub`); capture `vm-id`
-7. Write `config-values.yaml` inline (bundled postgres + redis)
-8. SCP `config-values.yaml` to VM
-9. SSH into VM and run:
-   - `curl` installer tgz (using license ID as auth)
-   - `tar xzf`
-   - `sudo ./playball-exe install --license license.yaml --headless --yes --installer-password <pw> --config-values /tmp/config-values.yaml`
-10. Cleanup (`if: always()`): archive customer, archive channel, delete VM
-
-### `build-test.yml` update
-
-Add `e2e-ec3` job calling `.github/workflows/e2e-ec3.yml`, alongside the existing `e2e` job:
-```yaml
-e2e-ec3:
-  needs: [build, lint]
-  uses: ./.github/workflows/e2e-ec3.yml
-  with:
-    image-tag: pr-${{ github.event.pull_request.number }}
-    pr-number: ${{ github.event.pull_request.number }}
-  secrets: inherit
+```
+build ──┐
+        ├──► release ──► e2e      ──┐
+lint  ──┘         └──► e2e-ec3   ──┴──► archive-channel
 ```
 
-### SSH/SCP helpers
+### `build-test.yml` changes
 
-Reuse the same pattern from `cmx-create-vm` skill — parse `scp-endpoint` and `ssh-endpoint` to extract host, port, and username from the `ssh://user@host:port` URI.
+1. Add `release` job (needs: build, lint): package chart + create release, output `channel-slug` and `version`
+2. `e2e` job: needs `release`; pass `channel-slug` and `version` as inputs
+3. Add `e2e-ec3` job (parallel with `e2e`): needs `release`; pass same inputs
+4. Add `archive-channel` job (needs: e2e, e2e-ec3, `if: always()`): archives the shared channel
+
+### `e2e.yml` changes
+
+- Remove the "Package Helm chart" and "Create and promote Replicated release" steps
+- Add `channel-slug` and `version` as required `workflow_call` inputs
+- Remove "Archive channel" cleanup step (now handled by `build-test.yml`)
+
+### `.github/workflows/e2e-ec3.yml` (new)
+
+**Trigger:** `workflow_call` with inputs `image-tag`, `pr-number`, `channel-slug`, `version`; plus `workflow_dispatch` for manual runs.
+
+**Job: `e2e-ec3`** — `timeout-minutes: 30`
+
+Steps:
+1. Checkout
+2. Install Replicated CLI
+3. Create customer (`replicated customer create`) with `--embedded-cluster-download` flag; capture license ID
+4. Generate SSH keypair — `ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N "" -C "ci@cmx"`
+5. Generate installer password — `openssl rand -hex 16`, store in env
+6. Create CMX VM (ubuntu 24.04, ttl 1h, `--ssh-public-key .ssh/id_ed25519.pub`); capture VM ID; poll until running
+7. Write `config-values.yaml` inline (bundled postgres + redis)
+8. SCP `config-values.yaml` to VM (parse `scp-endpoint` for host/port/user)
+9. SSH into VM and run:
+   - `curl -f "https://replicated.app/embedded/playball-exe/<channel-slug>/<version>" -H "Authorization: <license-id>" -o playball-exe.tgz`
+   - `tar xzf playball-exe.tgz`
+   - `sudo ./playball-exe install --license license.yaml --headless --yes --installer-password $INSTALLER_PASSWORD --config-values /tmp/config-values.yaml`
+10. Cleanup (`if: always()`): archive customer, delete VM
+
+**SSH/SCP helpers:** Parse `ssh://user@host:port` URI from `replicated vm ssh-endpoint` / `scp-endpoint` to extract host, port, and username — same pattern as `cmx-create-vm` skill.
 
 ---
 
