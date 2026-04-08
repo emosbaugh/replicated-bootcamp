@@ -65,7 +65,7 @@ export async function getLicenseField(name: string): Promise<string | null> {
     const res = await fetch(`${sdkUrl}/api/v1/license/fields/${name}`)
     if (!res.ok) return null
     const data = await res.json()
-    return data.value ?? null
+    return data.value != null ? String(data.value) : null
   } catch {
     return null
   }
