@@ -9,7 +9,11 @@ A web-based baseball management game built with Next.js, Prisma, and PostgreSQL.
 
 ## Getting Started
 
-### 1. Start the database
+### 1. Start infrastructure
+
+For full local development with the Replicated SDK, use k3d — see [Testing Locally with k3d](docs/testing-locally.md) for setup instructions.
+
+For quick development without the SDK (no license required):
 
 ```bash
 docker compose up -d
