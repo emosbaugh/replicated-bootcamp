@@ -70,7 +70,7 @@ stringData:
                   message: Application is not healthy
         - textAnalyze:
             checkName: "License Expiry Warning"
-            fileName: app/**/*.log
+            fileName: app/**/app.log
             regex: '\[license\] warning: expires in \d+ days'
             outcomes:
               - fail:
