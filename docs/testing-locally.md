@@ -2,6 +2,13 @@
 
 Use [k3d](https://k3d.io) to run postgres, redis, and the Replicated SDK in a local Kubernetes cluster while developing Next.js locally with `npm run dev`.
 
+Two scripts handle everything:
+
+| Script | Purpose |
+|--------|---------|
+| `scripts/dev-setup.sh` | One-time cluster creation, Helm install, `.env.local` config, and DB migration |
+| `scripts/dev-run.sh` | Port-forwards all services and starts the Next.js dev server |
+
 ## Prerequisites
 
 - [`k3d`](https://k3d.io/#installation) installed
@@ -18,88 +25,34 @@ export REPLICATED_LICENSE_ID=<your-license-id>
 
 > **Note for AI assistants:** The Bash tool does not inherit shell environment variables. When running `helm install`, pass the license ID literally rather than relying on `${REPLICATED_LICENSE_ID}` expansion.
 
-## Create a Cluster
+## Setup (once per environment)
 
 ```bash
-k3d cluster create playball-dev
+REPLICATED_LICENSE_ID=<your-license-id> ./scripts/dev-setup.sh
 ```
 
-Verify it's ready:
+This will:
+1. Create a k3d cluster (`playball-dev`)
+2. Install the Helm chart with postgres, redis, and the Replicated SDK
+3. Create `.env.local` from `.env.example` with a generated `NEXTAUTH_SECRET`
+4. Run database migrations and seed data
 
-```bash
-kubectl get nodes
-```
-
-## Install the Helm Chart
-
-Images are proxied through `images.emosbaugh.be`, which requires authentication. Generate the pull secret config using your license ID:
-
-```bash
-DOCKER_CONFIG=$(echo -n "{\"auths\":{\"images.emosbaugh.be\":{\"auth\":\"$(echo -n "${REPLICATED_LICENSE_ID}:${REPLICATED_LICENSE_ID}" | base64)\"}}}" | base64)
-```
-
-Install with the dev values override — this disables the app Deployment and runs only postgres, redis, and the Replicated SDK:
-
-```bash
-helm install playball deploy/charts \
-  -f deploy/charts/values.dev.yaml \
-  --set replicated.integration.licenseID="${REPLICATED_LICENSE_ID}" \
-  --set global.replicated.dockerconfigjson="${DOCKER_CONFIG}" \
-  --wait --timeout 5m
-```
-
-Verify all pods are running:
-
-```bash
-kubectl get pods
-```
-
-## Port-Forward Services
-
-Forward all three services to localhost (run these in the background):
-
-```bash
-kubectl port-forward svc/playball-postgresql 5432:5432 &
-kubectl port-forward svc/playball-redis-master 6379:6379 &
-kubectl port-forward svc/playball-exe-sdk 3001:3000 &
-```
-
-> The SDK is forwarded to port **3001** (not 3000) to avoid conflicting with the Next.js dev server.
-
-## Configure the App
-
-```bash
-cp .env.example .env.local
-```
-
-Open `.env.local` and replace the `NEXTAUTH_SECRET` placeholder with a generated secret:
-
-```bash
-openssl rand -base64 32
-```
-
-The file already includes `REPLICATED_SDK_URL=http://localhost:3001` pointing to the port-forwarded SDK.
-
-## Run Migrations
-
-```bash
-npx prisma migrate dev
-npx prisma db seed
-```
+Re-running the script when `.env.local` already exists will leave it untouched.
 
 ## Start the Dev Server
 
 ```bash
-npm run dev
+./scripts/dev-run.sh
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+This port-forwards postgres (`5432`), redis (`6379`), and the Replicated SDK (`3001`) to localhost, then starts the Next.js dev server at [http://localhost:3000](http://localhost:3000).
+
+Press **Ctrl+C** to stop everything — port-forwards are cleaned up automatically.
 
 ## Clean Up
 
-Stop port-forwarding and delete the cluster when done:
+Delete the cluster when done:
 
 ```bash
-kill %1 %2 %3
 k3d cluster delete playball-dev
 ```
