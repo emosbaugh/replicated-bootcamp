@@ -60,11 +60,3 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Actual:** `--output-file` is not a valid flag — the CLI errors with `unknown flag: --output-file`. The correct flag is `--output`. Additionally, the path passed to `--output` should omit the `.tar.gz` extension, which the CLI appends automatically — this is undocumented. Neither the troubleshoot.sh docs nor the Replicated docs mention the exact flag name or this extension behavior.
 **Resolution:** Found the correct flag (`--output`) by reading cobra flag definitions in `cmd/troubleshoot/cli/root.go` on GitHub. Took ~20 minutes of searching docs and fetching source files. Caught only after CI failure.
 **Severity:** blocker
-
-## Entry 8 — 2026-04-08 — annoyance
-
-**Trying to:** Use `process.env.NEXT_RUNTIME === 'nodejs'` in `instrumentation.ts` to guard Node.js-only code, following the Next.js 16 documentation example verbatim.
-**Expected:** `NEXT_RUNTIME` would be `'nodejs'` when `register()` is called in the Node.js server context, including Turbopack dev mode.
-**Actual:** `NEXT_RUNTIME` is `undefined` in Turbopack dev mode — the guard evaluates to `false` and the entire instrumentation block is silently skipped. The docs show `=== 'nodejs'` and `=== 'edge'` as the two branches, implying they are exhaustive, but neither fires in dev mode.
-**Resolution:** Changed the guard to `!== 'edge'`, which correctly runs in Node.js context (where `NEXT_RUNTIME` is `undefined` or `'nodejs'`) and skips only for Edge runtime. Discovered by verifying the function logic worked correctly in isolation and tracing the Next.js internals to confirm `registerInstrumentation` does not set `NEXT_RUNTIME` before calling `register()`.
-**Severity:** annoyance
