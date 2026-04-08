@@ -1,0 +1,109 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-preflight
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+    troubleshoot.sh/kind: preflight
+stringData:
+  preflight.yaml: |
+    apiVersion: troubleshoot.sh/v1beta2
+    kind: Preflight
+    metadata:
+      name: {{ include "playball-exe.fullname" . }}
+    spec:
+      collectors:
+        - http:
+            collectorName: image-registry
+            get:
+              url: https://images.emosbaugh.be
+              timeout: 10s
+        {{- if not .Values.postgresql.enabled }}
+        - postgres:
+            collectorName: external-db
+            uri: "{{ .Values.externalDatabase.url }}"
+        {{- end }}
+
+      analyzers:
+        - clusterVersion:
+            outcomes:
+              - fail:
+                  when: "< 1.26.0"
+                  message: |
+                    Kubernetes 1.26.0 or later is required. Upgrade your cluster before installing.
+                    See: https://kubernetes.io/releases/
+              - pass:
+                  message: Kubernetes version meets the minimum requirement.
+
+        - distribution:
+            outcomes:
+              - fail:
+                  when: "== docker-desktop"
+                  message: |
+                    Docker Desktop is not a supported distribution. It lacks the networking and
+                    storage capabilities required for playball-exe.
+                    Supported distributions: https://docs.replicated.com/vendor/distributing-overview
+              - fail:
+                  when: "== microk8s"
+                  message: |
+                    MicroK8s is not a supported distribution. Known incompatibilities with storage
+                    classes and networking will prevent playball-exe from running correctly.
+                    Supported distributions: https://docs.replicated.com/vendor/distributing-overview
+              - pass:
+                  message: Kubernetes distribution is supported.
+
+        - nodeResources:
+            checkName: Cluster CPU
+            outcomes:
+              - fail:
+                  when: "sum(cpuAllocatable) < 2"
+                  message: |
+                    At least 2 allocatable CPU cores are required across the cluster.
+                    playball-exe, PostgreSQL, Redis, and the Replicated SDK together require
+                    a minimum of 2 cores. Scale up your node pool or choose a larger instance type.
+              - pass:
+                  message: Cluster has sufficient CPU (>= 2 allocatable cores).
+
+        - nodeResources:
+            checkName: Cluster Memory
+            outcomes:
+              - fail:
+                  when: "sum(memoryAllocatable) < 2Gi"
+                  message: |
+                    At least 2Gi of allocatable memory is required across the cluster.
+                    playball-exe, PostgreSQL, Redis, and the Replicated SDK together require
+                    a minimum of 2Gi. Scale up your node pool or choose a larger instance type.
+              - pass:
+                  message: Cluster has sufficient memory (>= 2Gi allocatable).
+
+        - http:
+            checkName: Image Registry Connectivity
+            collectorName: image-registry
+            outcomes:
+              - fail:
+                  when: "error"
+                  message: |
+                    Cannot reach the image registry at https://images.emosbaugh.be.
+                    All container images are proxied through this registry. Without access,
+                    pods will fail to start with ImagePullBackOff errors.
+                    Check: (1) outbound HTTPS (port 443) is allowed, (2) DNS resolves
+                    images.emosbaugh.be, (3) no firewall or proxy is blocking the connection.
+              - pass:
+                  message: Image registry is reachable.
+
+        {{- if not .Values.postgresql.enabled }}
+        - postgres:
+            checkName: External Database Connectivity
+            collectorName: external-db
+            outcomes:
+              - fail:
+                  when: "connected == false"
+                  message: |
+                    Cannot connect to the external database configured at externalDatabase.url.
+                    The application will not start without a reachable PostgreSQL instance.
+                    Check: (1) the database is running and network-accessible from the cluster,
+                    (2) the URL has the correct host, port, credentials, and database name,
+                    (3) network policies allow outbound PostgreSQL traffic (default port 5432).
+              - pass:
+                  message: External database is reachable.
+        {{- end }}
