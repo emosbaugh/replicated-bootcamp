@@ -50,16 +50,16 @@ stringData:
               maxLines: 10000
         - exec:
             name: app-healthz
+            collectorName: app-healthz
             selector:
               - app.kubernetes.io/name=playball-exe
             namespace: {{ .Release.Namespace }}
-            containerName: app
-            command: ["wget", "-qO-", "http://localhost:{{ .Values.service.port }}/api/healthz"]
+            command: ["wget", "-qO-", "http://127.0.0.1:{{ .Values.service.port }}/api/healthz"]
             timeout: 10s
       analyzers:
         - textAnalyze:
             checkName: App Health
-            fileName: "app-healthz/*/*/stdout"
+            fileName: "app-healthz/*/*/app-healthz-stdout"
             regex: '"status":"ok"'
             outcomes:
               - pass:
