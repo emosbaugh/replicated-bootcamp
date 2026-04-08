@@ -1,0 +1,10 @@
+# Dev override — runs only postgres, redis, and the Replicated SDK in k3d.
+# The Next.js app runs locally via `npm run dev` instead.
+# See docs/testing-locally.md for full setup instructions.
+
+app:
+  enabled: false
+
+nextauth:
+  secret: dev
+  url: http://localhost:3000
