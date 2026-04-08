@@ -135,7 +135,7 @@ jobs:
       - name: Download and install EC v3
         env:
           LICENSE_ID: ${{ steps.create-customer.outputs.license-id }}
-          CHANNEL: ${{ inputs.channel-slug }}
+          CHANNEL: pr-${{ inputs.pr-number }}
           VERSION: ${{ inputs.version }}
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
