@@ -89,6 +89,7 @@ jobs:
           VM_ID=$(replicated vm create \
             --distribution ubuntu \
             --version 24.04 \
+            --instance-type r1.large \
             --ttl 1h \
             --ssh-public-key .ssh/id_ed25519.pub \
             --token ${{ secrets.REPLICATED_API_TOKEN }} \
