@@ -48,14 +48,18 @@ stringData:
             limits:
               maxAge: "720h"
               maxLines: 10000
-        - http:
+        - exec:
             name: app-healthz
-            get:
-              url: http://{{ include "playball-exe.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.service.port }}/api/healthz
+            selector:
+              - app.kubernetes.io/name=playball-exe
+            namespace: {{ .Release.Namespace }}
+            containerName: app
+            command: ["wget", "-qO-", "http://localhost:{{ .Values.service.port }}/api/healthz"]
+            timeout: 10s
       analyzers:
         - textAnalyze:
             checkName: App Health
-            fileName: http/app-healthz/response.json
+            fileName: "app-healthz/*/*/stdout"
             regex: '"status":"ok"'
             outcomes:
               - pass:
