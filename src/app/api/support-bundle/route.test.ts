@@ -41,8 +41,8 @@ describe('POST /api/support-bundle', () => {
     const body = await res.json()
     expect(body).toEqual({ ok: true })
     expect(global.fetch).toHaveBeenCalledWith(
-      'http://replicated:3000/api/v1/app/supportbundle',
-      { method: 'POST' }
+      'http://replicated:3000/api/v1/supportbundle',
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }
     )
   })
 

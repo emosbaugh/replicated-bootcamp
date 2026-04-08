@@ -14,7 +14,11 @@ export async function POST() {
   }
 
   try {
-    const res = await fetch(`${sdkUrl}/api/v1/app/supportbundle`, { method: 'POST' })
+    const res = await fetch(`${sdkUrl}/api/v1/supportbundle`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}',
+    })
     if (!res.ok) {
       console.error('[support-bundle] SDK returned', res.status)
       return NextResponse.json(
