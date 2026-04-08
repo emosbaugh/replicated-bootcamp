@@ -77,7 +77,15 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Unclear from the warning message that RBAC was the root cause; the ToS message is a red herring that sends you down the wrong path
 **Severity:** blocker
 
-## Entry 10 — 2026-04-08 — blocker
+## Entry 10 — 2026-04-08 — annoyance
+
+**Trying to:** Enable embedded cluster download on a customer via the `replicatedhq/replicated-actions/create-customer@v1` GitHub Action
+**Expected:** `is-embedded-cluster-download-enabled` to be a valid input, consistent with `is-kots-install-enabled` which the action does support
+**Actual:** The action silently ignores the input with a warning: "Unexpected input(s) 'is-embedded-cluster-download-enabled', valid inputs are [...]" — the EC download flag is not exposed even though the underlying API supports it
+**Resolution:** Replaced the action with a direct `replicated customer create --embedded-cluster-download` CLI call; required parsing JSON output to capture customer-id and license-id that the action would have provided as named outputs
+**Severity:** annoyance
+
+## Entry 11 — 2026-04-08 — blocker
 
 **Trying to:** Configure an `exec` collector to run a health check inside the app pod and analyze the output with `textAnalyze`
 **Expected:** `containerName` selects which container to exec into and appears in the output path; `localhost` resolves correctly inside the container; the stdout file is named `{collectorName}-stdout`
