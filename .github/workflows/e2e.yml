@@ -68,6 +68,18 @@ jobs:
       - name: Generate nextauth secret
         run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> $GITHUB_ENV
 
+      - name: Install preflight CLI
+        run: |
+          curl -fsSL https://github.com/replicatedhq/troubleshoot/releases/latest/download/preflight_linux_amd64.tar.gz \
+            | tar xz -C /tmp preflight
+          sudo mv /tmp/preflight /usr/local/bin/preflight
+
+      - name: Run preflight checks
+        run: |
+          helm template /tmp/playball-exe-0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}.tgz \
+            --set nextauth.secret=test \
+            | preflight --interactive=false -
+
       - name: Install via Replicated registry
         uses: replicatedhq/replicated-actions/helm-install@v1
         with:
