@@ -64,3 +64,53 @@ stringData:
               - fail:
                   when: "false"
                   message: Application is not healthy
+        - deploymentStatus:
+            name: {{ include "playball-exe.fullname" . }}
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "App deployment ({{ include "playball-exe.fullname" . }}) has no available replicas. Users cannot access the application."
+              - pass:
+                  when: ">= 1"
+                  message: App deployment is running.
+        - deploymentStatus:
+            name: {{ .Values.replicated.nameOverride | default "replicated" }}
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "Replicated SDK deployment ({{ .Values.replicated.nameOverride | default "replicated" }}) has no available replicas. License validation and update checks are unavailable."
+              - pass:
+                  when: ">= 1"
+                  message: Replicated SDK deployment is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-postgresql
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "PostgreSQL ({{ .Release.Name }}-postgresql) has no ready pods. The application cannot read or write data."
+              - pass:
+                  when: ">= 1"
+                  message: PostgreSQL is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-redis-master
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "Redis master ({{ .Release.Name }}-redis-master) has no ready pods. Session management and write caching are unavailable."
+              - pass:
+                  when: ">= 1"
+                  message: Redis master is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-redis-replicas
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "Redis replicas ({{ .Release.Name }}-redis-replicas) have no ready pods. Read throughput may be degraded."
+              - pass:
+                  when: ">= 1"
+                  message: Redis replicas are running.
