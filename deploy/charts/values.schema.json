@@ -27,6 +27,15 @@
       "type": "integer",
       "minimum": 1
     },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "resources": {
       "type": "object",
       "additionalProperties": false,
@@ -236,15 +245,6 @@
     },
     "replicated": {
       "type": "object"
-    },
-    "app": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "enabled": {
-          "type": "boolean"
-        }
-      }
     },
     "imagePullSecrets": {
       "type": "array",
