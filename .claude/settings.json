@@ -2,11 +2,13 @@
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
     "allow": [
-      "Bash(docker compose:*)",
+      "Bash(k3d cluster:*)",
       "Bash(openssl rand:*)",
       "Bash(npm install:*)",
       "Bash(npm run:*)",
-      "Bash(npx prisma:*)"
+      "Bash(npx prisma:*)",
+      "Bash(./scripts/*)",
+      "Bash(kubectl support-bundle:*)"
     ]
   }
 }
