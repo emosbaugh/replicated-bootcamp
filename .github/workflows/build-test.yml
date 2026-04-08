@@ -58,7 +58,10 @@ jobs:
         run: echo "version=0.1.0-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
 
       - name: Package Helm chart
-        run: helm package deploy/charts -d deploy/manifests --version "${{ steps.set-version.outputs.version }}"
+        run: |
+          VERSION="${{ steps.set-version.outputs.version }}"
+          sed -i "s/chartVersion: .*/chartVersion: $VERSION/" deploy/manifests/helmchart.yaml
+          helm package deploy/charts -d deploy/manifests --version "$VERSION"
 
       - name: Create and promote Replicated release
         id: create-release

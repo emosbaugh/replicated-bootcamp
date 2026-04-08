@@ -40,6 +40,7 @@ jobs:
       - name: Package Helm chart
         run: |
           sed -i "s/^  tag: .*/  tag: ${{ steps.vars.outputs.image-tag }}/" deploy/charts/values.yaml
+          sed -i "s/chartVersion: .*/chartVersion: ${{ steps.vars.outputs.version }}/" deploy/manifests/helmchart.yaml
           helm package deploy/charts -d deploy/manifests --version "${{ steps.vars.outputs.version }}"
 
       - name: Create and promote Replicated release
