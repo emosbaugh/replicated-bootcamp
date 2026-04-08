@@ -71,6 +71,14 @@ Shared at the end of the exercise as structured developer experience feedback.
 
 ## Entry 9 — 2026-04-08 — blocker
 
+**Trying to:** Create a CMX VM using `replicated vm create` for the first time
+**Expected:** VM creation to succeed, or a clear error if the account lacks permissions
+**Actual:** Got a warning about needing to accept the Compatibility Matrix terms of service, but the real issue was an RBAC problem — the service account did not have permission to create VMs
+**Resolution:** Unclear from the warning message that RBAC was the root cause; the ToS message is a red herring that sends you down the wrong path
+**Severity:** blocker
+
+## Entry 10 — 2026-04-08 — blocker
+
 **Trying to:** Configure an `exec` collector to run a health check inside the app pod and analyze the output with `textAnalyze`
 **Expected:** `containerName` selects which container to exec into and appears in the output path; `localhost` resolves correctly inside the container; the stdout file is named `{collectorName}-stdout`
 **Actual:** Three undocumented behaviors compounded: (1) `containerName` is silently ignored for output file naming — the filename prefix comes from `collectorName`, not `containerName`. Without a `collectorName`, files land as `-stdout.txt`, `-stderr.txt`, `-errors.json` (empty prefix), and the `textAnalyze` glob never matches. (2) `localhost` resolves to `::1` (IPv6) in Alpine-based pods; since Next.js binds to IPv4 only, `wget localhost` gets connection refused — must use `127.0.0.1` explicitly. (3) The stdout file is named `{collectorName}-stdout.txt` (with `.txt` extension), not `{collectorName}-stdout` as the source-code format strings suggest.
