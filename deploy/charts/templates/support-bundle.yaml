@@ -70,7 +70,7 @@ stringData:
             outcomes:
               - fail:
                   when: "< 1"
-                  message: "App deployment ({{ include "playball-exe.fullname" . }}) has no available replicas. Users cannot access the application."
+                  message: App deployment ({{ include "playball-exe.fullname" . }}) has no available replicas. Users cannot access the application.
               - pass:
                   when: ">= 1"
                   message: App deployment is running.
@@ -80,7 +80,7 @@ stringData:
             outcomes:
               - fail:
                   when: "< 1"
-                  message: "Replicated SDK deployment ({{ .Values.replicated.nameOverride | default "replicated" }}) has no available replicas. License validation and update checks are unavailable."
+                  message: Replicated SDK deployment ({{ .Values.replicated.nameOverride | default "replicated" }}) has no available replicas. License validation and update checks are unavailable.
               - pass:
                   when: ">= 1"
                   message: Replicated SDK deployment is running.
