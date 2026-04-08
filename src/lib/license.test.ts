@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { checkLicense, _resetCacheForTesting, getLicenseField } from './license'
+import { checkLicense, _resetCacheForTesting, getLicenseField, logLicenseExpiryWarning } from './license'
 
 beforeEach(() => {
   _resetCacheForTesting()
@@ -105,5 +105,78 @@ describe('getLicenseField', () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('Network error')))
     const result = await getLicenseField('advanced_stats_enabled')
     expect(result).toBeNull()
+  })
+})
+
+describe('logLicenseExpiryWarning', () => {
+  it('logs a warning when license expires in 3 days', async () => {
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ entitlements: { expires_at: { value: expiresAt } } }),
+    }))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[license\] warning: expires in 3 days \(\d{4}-\d{2}-\d{2}\)/)
+    )
+  })
+
+  it('logs a warning when license expires in exactly 7 days', async () => {
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ entitlements: { expires_at: { value: expiresAt } } }),
+    }))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/\[license\] warning: expires in 7 days/)
+    )
+  })
+
+  it('does not log when license expires in 8 days', async () => {
+    const expiresAt = new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString()
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ entitlements: { expires_at: { value: expiresAt } } }),
+    }))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not log when expires_at is empty', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ entitlements: { expires_at: { value: '' } } }),
+    }))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not log when SDK returns non-ok', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 503 }))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not log when fetch throws', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')))
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).not.toHaveBeenCalled()
+  })
+
+  it('does not log when REPLICATED_SDK_URL is not set', async () => {
+    vi.unstubAllEnvs()
+    const fetchSpy = vi.fn()
+    vi.stubGlobal('fetch', fetchSpy)
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    await logLicenseExpiryWarning()
+    expect(warnSpy).not.toHaveBeenCalled()
+    expect(fetchSpy).not.toHaveBeenCalled()
   })
 })

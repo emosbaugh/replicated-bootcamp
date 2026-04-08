@@ -70,3 +70,26 @@ export async function getLicenseField(name: string): Promise<string | null> {
     return null
   }
 }
+
+export async function logLicenseExpiryWarning(): Promise<void> {
+  const sdkUrl = process.env.REPLICATED_SDK_URL
+  if (!sdkUrl) return
+
+  try {
+    const res = await fetch(`${sdkUrl}/api/v1/license/info`)
+    if (!res.ok) return
+
+    const data = await res.json() as { entitlements?: { expires_at?: { value?: string } } }
+    const expiresAt: string = data?.entitlements?.expires_at?.value ?? ''
+    if (!expiresAt) return
+
+    const expiryDate = new Date(expiresAt)
+    const daysUntilExpiry = Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    if (daysUntilExpiry > 0 && daysUntilExpiry <= 7) {
+      const formatted = expiryDate.toISOString().split('T')[0]
+      console.warn(`[license] warning: expires in ${daysUntilExpiry} days (${formatted})`)
+    }
+  } catch {
+    // no-op: don't disrupt startup on SDK connectivity issues
+  }
+}
