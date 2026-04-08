@@ -59,7 +59,7 @@ stringData:
       analyzers:
         - textAnalyze:
             checkName: App Health
-            fileName: "app-healthz/*/*/app-healthz-stdout"
+            fileName: "app-healthz/*/*/app-healthz-stdout.txt"
             regex: '"status":"ok"'
             outcomes:
               - pass:
