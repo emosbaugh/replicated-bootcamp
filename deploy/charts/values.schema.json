@@ -237,6 +237,15 @@
     "replicated": {
       "type": "object"
     },
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        }
+      }
+    },
     "imagePullSecrets": {
       "type": "array",
       "items": {
