@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkLicense } from '@/lib/license'
 
-export async function proxy(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const status = await checkLicense()
   if (status.valid) {
     return NextResponse.next()
