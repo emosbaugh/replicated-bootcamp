@@ -60,3 +60,11 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Actual:** `--output-file` is not a valid flag — the CLI errors with `unknown flag: --output-file`. The correct flag is `--output`. Additionally, the path passed to `--output` should omit the `.tar.gz` extension, which the CLI appends automatically — this is undocumented. Neither the troubleshoot.sh docs nor the Replicated docs mention the exact flag name or this extension behavior.
 **Resolution:** Found the correct flag (`--output`) by reading cobra flag definitions in `cmd/troubleshoot/cli/root.go` on GitHub. Took ~20 minutes of searching docs and fetching source files. Caught only after CI failure.
 **Severity:** blocker
+
+## Entry 8 — 2026-04-08 — blocker
+
+**Trying to:** Use the `http` collector to check `/api/healthz` and analyze the response with `textAnalyze`
+**Expected:** The collector would make the HTTP request in-cluster (since the bundle spec is deployed as a cluster resource), and the file would land at `http/{name}/response.json` as the `fileName` field suggested
+**Actual:** Two separate problems: (1) The `http` collector makes the request from wherever the `support-bundle` binary runs — not from inside the cluster — so `*.svc.cluster.local` DNS fails on any machine without cluster DNS access (including CI runners and developer laptops). (2) The output file path is `{name}/result.json` on error and `{name}/response.json` on success, not `http/{name}/response.json` — the `http/` prefix in the docs example is misleading and caused "No matching files" warnings even when the collector ran.
+**Resolution:** Replaced the `http` collector with an `exec` collector that runs `wget` inside the app container, making the request always in-cluster. Updated `textAnalyze` `fileName` to `app-healthz/*/*/stdout` to match exec output paths.
+**Severity:** blocker
