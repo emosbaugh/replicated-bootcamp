@@ -1,0 +1,214 @@
+name: E2E Test EC v3 on CMX VM
+
+on:
+  workflow_call:
+    inputs:
+      image-tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
+      pr-number:
+        description: Pull request number
+        required: true
+        type: string
+      channel-slug:
+        description: Replicated channel slug
+        required: true
+        type: string
+      version:
+        description: Release version label
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: Docker image tag to deploy
+        required: true
+        type: string
+      pr-number:
+        description: Pull request number
+        required: false
+        type: string
+        default: 'manual'
+      channel-slug:
+        description: Replicated channel slug
+        required: true
+        type: string
+      version:
+        description: Release version label
+        required: true
+        type: string
+
+jobs:
+  e2e-ec3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Replicated CLI
+        run: |
+          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
+            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
+          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
+            -o replicated.tar.gz
+          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
+          sudo mv replicated /usr/local/bin/replicated
+
+      - name: Create test customer
+        id: create-customer
+        run: |
+          CUSTOMER_JSON=$(replicated customer create \
+            --name "ci-ec3-pr-${{ inputs.pr-number }}-${{ github.run_number }}" \
+            --channel "pr-${{ inputs.pr-number }}" \
+            --type dev \
+            --embedded-cluster-download \
+            --app playball-exe \
+            --output json \
+            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          CUSTOMER_ID=$(echo "$CUSTOMER_JSON" | jq -r '.id')
+          echo "customer-id=$CUSTOMER_ID" >> $GITHUB_OUTPUT
+          LICENSE_ID=$(replicated customer download-license \
+            --customer "$CUSTOMER_ID" \
+            --app playball-exe \
+            --token ${{ secrets.REPLICATED_API_TOKEN }} \
+            | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
+          echo "license-id=$LICENSE_ID" >> $GITHUB_OUTPUT
+
+      - name: Generate SSH keypair
+        run: |
+          mkdir -p .ssh
+          ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N "" -C "ci@cmx"
+
+      - name: Generate installer password
+        run: echo "INSTALLER_PASSWORD=$(openssl rand -hex 16)" >> $GITHUB_ENV
+
+      - name: Create CMX VM
+        id: create-vm
+        run: |
+          VM_ID=$(replicated vm create \
+            --distribution ubuntu \
+            --version 24.04 \
+            --instance-type r1.large \
+            --ttl 1h \
+            --ssh-public-key .ssh/id_ed25519.pub \
+            --token ${{ secrets.REPLICATED_API_TOKEN }} \
+            --output json \
+            | jq -r '.[0].id')
+          echo "vm-id=$VM_ID" >> $GITHUB_OUTPUT
+
+      - name: Wait for VM to be running
+        run: |
+          VM_ID="${{ steps.create-vm.outputs.vm-id }}"
+          for i in $(seq 1 60); do
+            STATUS=$(replicated vm ls \
+              --output json \
+              --token ${{ secrets.REPLICATED_API_TOKEN }} \
+              | jq -r --arg id "$VM_ID" '.[] | select(.id == $id) | .status')
+            echo "VM status: $STATUS"
+            [ "$STATUS" = "running" ] && break
+            [ "$i" -eq 60 ] && { echo "Timed out waiting for VM"; exit 1; }
+            sleep 10
+          done
+
+      - name: Write config-values.yaml
+        env:
+          CONFIG_VALUES: |
+            apiVersion: kots.io/v1beta1
+            kind: ConfigValues
+            spec:
+              values:
+                postgresql_enabled:
+                  value: "1"
+                redis_enabled:
+                  value: "1"
+        run: echo "$CONFIG_VALUES" > /tmp/config-values.yaml
+
+      - name: SCP config-values.yaml to VM
+        run: |
+          VM_ID="${{ steps.create-vm.outputs.vm-id }}"
+          SCP_ENDPOINT=$(replicated vm scp-endpoint "$VM_ID" \
+            --username ci \
+            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SCP_HOST=$(echo "$SCP_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
+          SCP_PORT=$(echo "$SCP_ENDPOINT" | cut -d: -f3)
+          scp -i .ssh/id_ed25519 \
+            -P "$SCP_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            /tmp/config-values.yaml \
+            "ci@${SCP_HOST}:/tmp/config-values.yaml"
+
+      - name: Download and install EC v3
+        env:
+          LICENSE_ID: ${{ steps.create-customer.outputs.license-id }}
+          CHANNEL: pr-${{ inputs.pr-number }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          VM_ID="${{ steps.create-vm.outputs.vm-id }}"
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
+            --username ci \
+            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
+          SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
+          ssh -i .ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            -o ServerAliveInterval=30 \
+            -o ServerAliveCountMax=60 \
+            "ci@$SSH_HOST" \
+            "curl -f 'https://replicated.app/embedded/playball-exe/${CHANNEL}/${VERSION}' \
+               -H 'Authorization: ${LICENSE_ID}' -o playball-exe.tgz && \
+             tar xzf playball-exe.tgz && \
+             sudo ./playball-exe install \
+               --license license.yaml \
+               --headless \
+               --yes \
+               --installer-password '${INSTALLER_PASSWORD}' \
+               --config-values /tmp/config-values.yaml"
+
+      - name: Collect support bundle
+        id: collect-support-bundle
+        if: always() && steps.create-vm.outcome == 'success'
+        continue-on-error: true
+        run: |
+          VM_ID="${{ steps.create-vm.outputs.vm-id }}"
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
+            --username ci \
+            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
+          SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
+          ssh -i .ssh/id_ed25519 \
+            -p "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "ci@$SSH_HOST" \
+            "sudo playball-exe support-bundle --output /tmp/support-bundle.tar.gz"
+          scp -i .ssh/id_ed25519 \
+            -P "$SSH_PORT" \
+            -o StrictHostKeyChecking=no \
+            -o UserKnownHostsFile=/dev/null \
+            "ci@${SSH_HOST}:/tmp/support-bundle.tar.gz" \
+            ./support-bundle.tar.gz
+
+      - name: Upload support bundle artifact
+        if: always() && steps.collect-support-bundle.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: support-bundle-pr-${{ inputs.pr-number }}-${{ github.run_number }}
+          path: support-bundle.tar.gz
+          if-no-files-found: warn
+
+      - name: Archive customer
+        if: always() && steps.create-customer.outcome != 'skipped'
+        uses: replicatedhq/replicated-actions/archive-customer@v1
+        with:
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          customer-id: ${{ steps.create-customer.outputs.customer-id }}
+
+      - name: Delete VM
+        if: always() && steps.create-vm.outcome != 'skipped'
+        run: |
+          replicated vm rm "${{ steps.create-vm.outputs.vm-id }}" \
+            --token ${{ secrets.REPLICATED_API_TOKEN }}

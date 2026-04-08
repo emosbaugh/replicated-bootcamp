@@ -44,10 +44,63 @@ jobs:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
           REPLICATED_APP: playball-exe
 
-  e2e:
+  release:
     needs: [build, lint]
+    runs-on: ubuntu-latest
+    outputs:
+      channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+      version: ${{ steps.set-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set version
+        id: set-version
+        run: echo "version=0.1.0-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
+
+      - name: Package Helm chart
+        run: |
+          VERSION="${{ steps.set-version.outputs.version }}"
+          sed -i "s/^  tag: .*/  tag: pr-${{ github.event.pull_request.number }}/" deploy/charts/values.yaml
+          sed -i "s/chartVersion: .*/chartVersion: $VERSION/" deploy/manifests/helmchart.yaml
+          helm package deploy/charts -d deploy/manifests --version "$VERSION"
+
+      - name: Create and promote Replicated release
+        id: create-release
+        uses: replicatedhq/replicated-actions/create-release@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          yaml-dir: deploy/manifests
+          promote-channel: pr-${{ github.event.pull_request.number }}
+          version: ${{ steps.set-version.outputs.version }}
+
+  e2e:
+    needs: [release]
     uses: ./.github/workflows/e2e.yml
     with:
       image-tag: pr-${{ github.event.pull_request.number }}
       pr-number: ${{ github.event.pull_request.number }}
+      channel-slug: ${{ needs.release.outputs.channel-slug }}
+      version: ${{ needs.release.outputs.version }}
     secrets: inherit
+
+  e2e-ec3:
+    needs: [release]
+    uses: ./.github/workflows/e2e-ec3.yml
+    with:
+      image-tag: pr-${{ github.event.pull_request.number }}
+      pr-number: ${{ github.event.pull_request.number }}
+      channel-slug: ${{ needs.release.outputs.channel-slug }}
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
+
+  archive-channel:
+    needs: [release, e2e, e2e-ec3]
+    if: needs.release.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: replicatedhq/replicated-actions/archive-channel@v1
+        with:
+          app-slug: playball-exe
+          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
+          channel-slug: ${{ needs.release.outputs.channel-slug }}

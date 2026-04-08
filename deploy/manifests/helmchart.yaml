@@ -1,0 +1,25 @@
+apiVersion: kots.io/v1beta2
+kind: HelmChart
+metadata:
+  name: playball-exe
+spec:
+  chart:
+    name: playball-exe
+    chartVersion: 0.1.0
+  releaseName: playball-exe
+  helmUpgradeFlags:
+    - --timeout
+    - 15m
+  values:
+    postgresql:
+      enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
+    externalDatabase:
+      url: 'repl{{ ConfigOption "external_postgres_url" }}'
+    redis:
+      enabled: repl{{ ConfigOptionEquals "redis_enabled" "1" }}
+      replica:
+        replicaCount: 1
+    externalRedis:
+      url: 'repl{{ ConfigOption "external_redis_url" }}'
+    nextauth:
+      secret: 'repl{{ ConfigOption "nextauth_secret" }}'

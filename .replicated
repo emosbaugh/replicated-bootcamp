@@ -6,6 +6,8 @@ charts: [
     appVersion: "",
   },
 ]
+manifests:
+  - "./deploy/manifests"
 repl-lint:
   version: 1
   linters:

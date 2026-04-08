@@ -11,6 +11,14 @@ on:
         description: Pull request number
         required: true
         type: string
+      channel-slug:
+        description: Replicated channel slug
+        required: true
+        type: string
+      version:
+        description: Release version label
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       image-tag:
@@ -22,6 +30,14 @@ on:
         required: false
         type: string
         default: 'manual'
+      channel-slug:
+        description: Replicated channel slug
+        required: true
+        type: string
+      version:
+        description: Release version label
+        required: true
+        type: string
 
 jobs:
   e2e:
@@ -29,19 +45,6 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-
-      - name: Package Helm chart
-        run: helm package deploy/charts -d /tmp --version "0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}"
-
-      - name: Create and promote Replicated release
-        id: create-release
-        uses: replicatedhq/replicated-actions/create-release@v1
-        with:
-          app-slug: playball-exe
-          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          chart: /tmp/playball-exe-0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}.tgz
-          promote-channel: pr-${{ inputs.pr-number }}
-          version: 0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}
 
       - name: Create test customer
         id: create-customer
@@ -51,7 +54,7 @@ jobs:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
           customer-name: ci-pr-${{ inputs.pr-number }}-${{ github.run_number }}
           license-type: dev
-          channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+          channel-slug: ${{ inputs.channel-slug }}
           is-kots-install-enabled: "false"
 
       - name: Create CMX cluster
@@ -65,9 +68,6 @@ jobs:
           ttl: 1h
           export-kubeconfig: "true"
 
-      - name: Generate nextauth secret
-        run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> $GITHUB_ENV
-
       - name: Install preflight CLI
         run: |
           curl -fsSL https://github.com/replicatedhq/troubleshoot/releases/latest/download/preflight_linux_amd64.tar.gz \
@@ -76,16 +76,20 @@ jobs:
 
       - name: Run preflight checks
         run: |
-          helm template /tmp/playball-exe-0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}.tgz \
+          helm package deploy/charts -d /tmp --version "${{ inputs.version }}"
+          helm template /tmp/playball-exe-${{ inputs.version }}.tgz \
             --set nextauth.secret=test \
             | preflight --interactive=false -
+
+      - name: Generate nextauth secret
+        run: echo "NEXTAUTH_SECRET=$(openssl rand -base64 32)" >> $GITHUB_ENV
 
       - name: Install via Replicated registry
         uses: replicatedhq/replicated-actions/helm-install@v1
         with:
           helm-path: helm
-          chart: oci://registry.replicated.com/playball-exe/${{ steps.create-release.outputs.channel-slug }}/playball-exe
-          version: 0.1.0-pr.${{ inputs.pr-number }}.${{ github.run_number }}
+          chart: oci://registry.replicated.com/playball-exe/${{ inputs.channel-slug }}/playball-exe
+          version: ${{ inputs.version }}
           name: playball
           namespace: default
           kubeconfig: ${{ steps.create-cluster.outputs.cluster-kubeconfig }}
@@ -159,14 +163,6 @@ jobs:
         with:
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
           customer-id: ${{ steps.create-customer.outputs.customer-id }}
-
-      - name: Archive channel
-        if: always() && steps.create-release.outcome != 'skipped'
-        uses: replicatedhq/replicated-actions/archive-channel@v1
-        with:
-          app-slug: playball-exe
-          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          channel-slug: ${{ steps.create-release.outputs.channel-slug }}
 
       - name: Delete cluster
         if: always() && steps.create-cluster.outcome != 'skipped'

@@ -40,13 +40,14 @@ jobs:
       - name: Package Helm chart
         run: |
           sed -i "s/^  tag: .*/  tag: ${{ steps.vars.outputs.image-tag }}/" deploy/charts/values.yaml
-          helm package deploy/charts -d /tmp --version "${{ steps.vars.outputs.version }}"
+          sed -i "s/chartVersion: .*/chartVersion: ${{ steps.vars.outputs.version }}/" deploy/manifests/helmchart.yaml
+          helm package deploy/charts -d deploy/manifests --version "${{ steps.vars.outputs.version }}"
 
       - name: Create and promote Replicated release
         uses: replicatedhq/replicated-actions/create-release@v1
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          chart: /tmp/playball-exe-${{ steps.vars.outputs.version }}.tgz
+          yaml-dir: deploy/manifests
           promote-channel: ${{ steps.vars.outputs.channel }}
           version: ${{ steps.vars.outputs.version }}

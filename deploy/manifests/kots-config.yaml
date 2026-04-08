@@ -1,0 +1,41 @@
+apiVersion: kots.io/v1beta1
+kind: Config
+metadata:
+  name: playball-exe
+spec:
+  groups:
+    - name: database
+      title: Database
+      items:
+        - name: postgresql_enabled
+          title: Use Bundled PostgreSQL
+          type: bool
+          default: "1"
+        - name: external_postgres_url
+          title: External PostgreSQL URL
+          help_text: "PostgreSQL connection string, e.g. postgres://user:pass@host:5432/dbname"
+          type: password
+          when: '{{repl ConfigOptionEquals "postgresql_enabled" "0"}}'
+
+    - name: redis_config
+      title: Redis
+      items:
+        - name: redis_enabled
+          title: Use Bundled Redis
+          type: bool
+          default: "1"
+        - name: external_redis_url
+          title: External Redis URL
+          help_text: "Redis connection string, e.g. redis://host:6379"
+          type: password
+          when: '{{repl ConfigOptionEquals "redis_enabled" "0"}}'
+
+    - name: secrets
+      title: Secrets
+      items:
+        - name: nextauth_secret
+          title: NextAuth Secret
+          type: password
+          hidden: true
+          readonly: false
+          value: '{{repl RandomString 32}}'
