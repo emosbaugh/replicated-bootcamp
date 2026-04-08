@@ -48,3 +48,17 @@ stringData:
             limits:
               maxAge: "720h"
               maxLines: 10000
+      analyzers:
+        - textAnalyze:
+            checkName: "License Expiry Warning"
+            fileName: app/**/*.log
+            regex: '\[license\] warning: expires in'
+            outcomes:
+              - fail:
+                  when: "true"
+                  message: >-
+                    Your license expires within 7 days. Renew it before expiry
+                    to avoid service interruption: https://vendor.replicated.com
+              - pass:
+                  when: "false"
+                  message: "License is not approaching expiry."
