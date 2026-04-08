@@ -34,7 +34,8 @@ replicated cluster ls
 ## Configure kubectl
 
 ```bash
-export KUBECONFIG=$(replicated cluster kubeconfig <cluster-id> --output-path /tmp/kubeconfig-playball)
+replicated cluster kubeconfig <cluster-id> --output-path /tmp/kubeconfig-playball
+export KUBECONFIG=/tmp/kubeconfig-playball
 kubectl get nodes
 ```
 
@@ -52,6 +53,28 @@ docker push ttl.sh/playball-exe-${TAG}:2h
 > Choose a TTL long enough to last your test session (`:1h`, `:2h`, `:6h`, `:24h`). The image is public but ephemeral — no credentials needed.
 
 Then pass the image coordinates when installing (see below).
+
+## Install from the Replicated OCI Registry
+
+To install a released version directly from the Replicated registry, log in first using the license ID as both username and password:
+
+```bash
+helm registry login registry.replicated.com \
+  --username <license-id> \
+  --password <license-id>
+```
+
+Then install:
+
+```bash
+helm install playball-exe oci://registry.replicated.com/playball-exe/playball-exe \
+  --version <chart-version> \
+  --set replicated.licenseID=<license-id> \
+  --set nextauth.secret="$(openssl rand -base64 32)" \
+  --set service.type=NodePort
+```
+
+> `service.type=NodePort` is required to expose the app publicly (see [Expose the App](#expose-the-app)).
 
 ## Install the Helm Chart
 
