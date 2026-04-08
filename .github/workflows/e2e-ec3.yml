@@ -57,15 +57,17 @@ jobs:
 
       - name: Create test customer
         id: create-customer
-        uses: replicatedhq/replicated-actions/create-customer@v1
-        with:
-          app-slug: playball-exe
-          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          customer-name: ci-ec3-pr-${{ inputs.pr-number }}-${{ github.run_number }}
-          license-type: dev
-          channel-slug: ${{ inputs.channel-slug }}
-          is-kots-install-enabled: "false"
-          is-embedded-cluster-download-enabled: "true"
+        run: |
+          CUSTOMER_JSON=$(replicated customer create \
+            --name "ci-ec3-pr-${{ inputs.pr-number }}-${{ github.run_number }}" \
+            --channel "${{ inputs.channel-slug }}" \
+            --type dev \
+            --embedded-cluster-download \
+            --app playball-exe \
+            --output json \
+            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          echo "customer-id=$(echo "$CUSTOMER_JSON" | jq -r '.id')" >> $GITHUB_OUTPUT
+          echo "license-id=$(echo "$CUSTOMER_JSON" | jq -r '.licenseId // .id')" >> $GITHUB_OUTPUT
 
       - name: Generate SSH keypair
         run: |
