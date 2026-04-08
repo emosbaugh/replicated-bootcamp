@@ -48,7 +48,26 @@ stringData:
             limits:
               maxAge: "720h"
               maxLines: 10000
+        - exec:
+            name: app-healthz
+            collectorName: app-healthz
+            selector:
+              - app.kubernetes.io/name=playball-exe
+            namespace: {{ .Release.Namespace }}
+            command: ["wget", "-qO-", "http://127.0.0.1:{{ .Values.service.port }}/api/healthz"]
+            timeout: 10s
       analyzers:
+        - textAnalyze:
+            checkName: App Health
+            fileName: "app-healthz/*/*/app-healthz-stdout.txt"
+            regex: '"status":"ok"'
+            outcomes:
+              - pass:
+                  when: "true"
+                  message: Application is healthy
+              - fail:
+                  when: "false"
+                  message: Application is not healthy
         - textAnalyze:
             checkName: "License Expiry Warning"
             fileName: app/**/*.log
@@ -62,3 +81,75 @@ stringData:
               - pass:
                   when: "false"
                   message: "License expiry is not within 7 days."
+        - deploymentStatus:
+            name: {{ include "playball-exe.fullname" . }}
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: App deployment ({{ include "playball-exe.fullname" . }}) has no available replicas. Users cannot access the application.
+              - pass:
+                  when: ">= 1"
+                  message: App deployment is running.
+        - deploymentStatus:
+            name: {{ .Values.replicated.nameOverride | default "replicated" }}
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: Replicated SDK deployment ({{ .Values.replicated.nameOverride | default "replicated" }}) has no available replicas. License validation and update checks are unavailable.
+              - pass:
+                  when: ">= 1"
+                  message: Replicated SDK deployment is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-postgresql
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "PostgreSQL ({{ .Release.Name }}-postgresql) has no ready pods. The application cannot read or write data."
+              - pass:
+                  when: ">= 1"
+                  message: PostgreSQL is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-redis-master
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "Redis master ({{ .Release.Name }}-redis-master) has no ready pods. Session management and write caching are unavailable."
+              - pass:
+                  when: ">= 1"
+                  message: Redis master is running.
+        - statefulsetStatus:
+            name: {{ .Release.Name }}-redis-replicas
+            namespace: {{ .Release.Namespace }}
+            outcomes:
+              - fail:
+                  when: "< 1"
+                  message: "Redis replicas ({{ .Release.Name }}-redis-replicas) have no ready pods. Read throughput may be degraded."
+              - pass:
+                  when: ">= 1"
+                  message: Redis replicas are running.
+        - storageClass:
+            checkName: Default storage class
+            outcomes:
+              - fail:
+                  when: "== 0"
+                  message: No default storage class is available. The application requires a default storage class to provision persistent volumes. Please configure a default storage class in your cluster before installing.
+              - pass:
+                  when: ">= 1"
+                  message: A default storage class is available.
+        - nodeResources:
+            checkName: All nodes are ready
+            filters:
+              conditions:
+                - type: Ready
+                  status: "True"
+            outcomes:
+              - fail:
+                  when: "count() == 0"
+                  message: "No nodes are Ready. Pods cannot be scheduled, which will prevent the application from starting. Check node conditions with: kubectl get nodes"
+              - pass:
+                  when: "count() > 0"
+                  message: All nodes are Ready.

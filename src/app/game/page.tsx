@@ -110,6 +110,12 @@ export default function GamePage() {
           VIEW ROSTER + STATS -&gt;
         </button>
         <button
+          onClick={() => router.push('/support')}
+          className="font-mono text-xs text-green-600 hover:text-green-400"
+        >
+          SUPPORT -&gt;
+        </button>
+        <button
           onClick={() => signOut({ callbackUrl: '/' })}
           className="font-mono text-xs text-green-600 hover:text-green-400"
         >
@@ -122,12 +128,20 @@ export default function GamePage() {
   return (
     <div>
       <div className="flex justify-between p-4">
-        <button
-          onClick={() => router.push('/stats')}
-          className="font-mono text-xs text-green-600 hover:text-green-400"
-        >
-          ROSTER / STATS -&gt;
-        </button>
+        <div className="flex gap-4">
+          <button
+            onClick={() => router.push('/stats')}
+            className="font-mono text-xs text-green-600 hover:text-green-400"
+          >
+            ROSTER / STATS -&gt;
+          </button>
+          <button
+            onClick={() => router.push('/support')}
+            className="font-mono text-xs text-green-600 hover:text-green-400"
+          >
+            SUPPORT -&gt;
+          </button>
+        </div>
         <div className="flex gap-4">
           {gameState.status === 'completed' && (
             <button

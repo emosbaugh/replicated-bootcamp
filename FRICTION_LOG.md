@@ -60,3 +60,19 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Actual:** `--output-file` is not a valid flag — the CLI errors with `unknown flag: --output-file`. The correct flag is `--output`. Additionally, the path passed to `--output` should omit the `.tar.gz` extension, which the CLI appends automatically — this is undocumented. Neither the troubleshoot.sh docs nor the Replicated docs mention the exact flag name or this extension behavior.
 **Resolution:** Found the correct flag (`--output`) by reading cobra flag definitions in `cmd/troubleshoot/cli/root.go` on GitHub. Took ~20 minutes of searching docs and fetching source files. Caught only after CI failure.
 **Severity:** blocker
+
+## Entry 8 — 2026-04-08 — blocker
+
+**Trying to:** Use the `http` collector to check `/api/healthz` and analyze the response with `textAnalyze`
+**Expected:** The collector would make the HTTP request in-cluster (since the bundle spec is deployed as a cluster resource), and the file would land at `http/{name}/response.json` as the `fileName` field suggested
+**Actual:** Two separate problems: (1) The `http` collector makes the request from wherever the `support-bundle` binary runs — not from inside the cluster — so `*.svc.cluster.local` DNS fails on CI runners and developer laptops. (2) The output file path is `{name}/result.json` on error and `{name}/response.json` on success, not `http/{name}/response.json` — the `http/` prefix in docs examples is misleading.
+**Resolution:** Replaced the `http` collector with an `exec` collector that runs `wget` inside the app pod, making the request always in-cluster regardless of where `support-bundle` runs.
+**Severity:** blocker
+
+## Entry 9 — 2026-04-08 — blocker
+
+**Trying to:** Configure an `exec` collector to run a health check inside the app pod and analyze the output with `textAnalyze`
+**Expected:** `containerName` selects which container to exec into and appears in the output path; `localhost` resolves correctly inside the container; the stdout file is named `{collectorName}-stdout`
+**Actual:** Three undocumented behaviors compounded: (1) `containerName` is silently ignored for output file naming — the filename prefix comes from `collectorName`, not `containerName`. Without a `collectorName`, files land as `-stdout.txt`, `-stderr.txt`, `-errors.json` (empty prefix), and the `textAnalyze` glob never matches. (2) `localhost` resolves to `::1` (IPv6) in Alpine-based pods; since Next.js binds to IPv4 only, `wget localhost` gets connection refused — must use `127.0.0.1` explicitly. (3) The stdout file is named `{collectorName}-stdout.txt` (with `.txt` extension), not `{collectorName}-stdout` as the source-code format strings suggest.
+**Resolution:** Added `collectorName: app-healthz`, changed URL to `http://127.0.0.1:3000/api/healthz`, and updated the `textAnalyze` `fileName` glob to `app-healthz/*/*/app-healthz-stdout.txt`. Required three CI bundle iterations to discover each issue.
+**Severity:** blocker
