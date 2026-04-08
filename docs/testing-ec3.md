@@ -149,8 +149,9 @@ The command returns a public URL. Open it in a browser to access the Admin Conso
 
 ## Clean Up
 
-Always delete the VM when done:
+Always delete the VM and archive the customer when done:
 
 ```bash
 replicated vm rm <vm-id> --token $REPLICATED_API_TOKEN
+replicated customer archive <customer-id> --token $REPLICATED_API_TOKEN --app playball-exe
 ```

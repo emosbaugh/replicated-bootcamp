@@ -104,7 +104,7 @@ jobs:
 
   archive-channel:
     needs: [release, e2e, e2e-ec3]
-    if: always() && needs.release.result != 'skipped'
+    if: always() && needs.release.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: replicatedhq/replicated-actions/archive-channel@v1

@@ -84,32 +84,36 @@ jobs:
             --ttl 1h \
             --ssh-public-key .ssh/id_ed25519.pub \
             --token ${{ secrets.REPLICATED_API_TOKEN }} \
-            | awk 'NR==2 {print $1}')
+            --output json \
+            | jq -r '.[0].id')
           echo "vm-id=$VM_ID" >> $GITHUB_OUTPUT
 
       - name: Wait for VM to be running
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          while true; do
-            STATUS=$(replicated vm ls --token ${{ secrets.REPLICATED_API_TOKEN }} \
-              | awk -v id="$VM_ID" '$1==id {print $7}')
+          for i in $(seq 1 60); do
+            STATUS=$(replicated vm ls \
+              --output json \
+              --token ${{ secrets.REPLICATED_API_TOKEN }} \
+              | jq -r --arg id "$VM_ID" '.[] | select(.id == $id) | .status')
             echo "VM status: $STATUS"
             [ "$STATUS" = "running" ] && break
+            [ "$i" -eq 60 ] && { echo "Timed out waiting for VM"; exit 1; }
             sleep 10
           done
 
       - name: Write config-values.yaml
         run: |
           cat > /tmp/config-values.yaml <<'EOF'
-          apiVersion: kots.io/v1beta1
-          kind: ConfigValues
-          spec:
-            values:
-              postgresql_enabled:
-                value: "1"
-              redis_enabled:
-                value: "1"
-          EOF
+apiVersion: kots.io/v1beta1
+kind: ConfigValues
+spec:
+  values:
+    postgresql_enabled:
+      value: "1"
+    redis_enabled:
+      value: "1"
+EOF
 
       - name: SCP config-values.yaml to VM
         run: |
