@@ -1,3 +1,11 @@
+# Stage 0: download support-bundle binary
+FROM alpine:3.19 AS support-bundle-downloader
+RUN apk add --no-cache wget && \
+    wget -qO /tmp/sb.tar.gz \
+      "https://github.com/replicatedhq/troubleshoot/releases/download/v0.125.1/support-bundle_linux_amd64.tar.gz" && \
+    tar -xzf /tmp/sb.tar.gz -C /tmp support-bundle && \
+    chmod +x /tmp/support-bundle
+
 # Stage 1: install all dependencies (needed for build and prisma generate)
 FROM node:20-alpine AS deps
 WORKDIR /app
@@ -71,6 +79,8 @@ COPY --from=builder --chown=nextjs:nodejs /app/seed-dist/prisma/seed.js ./prisma
 
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.js ./prisma.config.js
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+
+COPY --from=support-bundle-downloader /tmp/support-bundle /usr/local/bin/support-bundle
 
 USER nextjs
 

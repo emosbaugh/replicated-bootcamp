@@ -1,0 +1,68 @@
+{{- if .Values.app.enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "playball-exe.fullname" . }}
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+---
+# Namespace-scoped permissions for log/exec collectors and workload analyzers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: [""]
+    resources: ["pods/exec"]
+    verbs: ["create"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "playball-exe.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+---
+# Cluster-scoped permissions for storageClass and nodeResources analyzers
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+  labels:
+    {{- include "playball-exe.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "playball-exe.fullname" . }}-support-bundle
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "playball-exe.fullname" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
