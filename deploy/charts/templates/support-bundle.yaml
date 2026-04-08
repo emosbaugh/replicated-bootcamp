@@ -18,15 +18,33 @@ stringData:
             namespace: {{ .Release.Namespace }}
             selector:
               - app.kubernetes.io/name=playball-exe
+            limits:
+              maxAge: "720h"
+              maxLines: 10000
         - logs:
             name: postgres
             namespace: {{ .Release.Namespace }}
             selector:
               - app.kubernetes.io/name=postgresql
               - app.kubernetes.io/instance={{ .Release.Name }}
+            limits:
+              maxAge: "720h"
+              maxLines: 10000
         - logs:
             name: redis
             namespace: {{ .Release.Namespace }}
             selector:
               - app.kubernetes.io/name=redis
               - app.kubernetes.io/instance={{ .Release.Name }}
+            limits:
+              maxAge: "720h"
+              maxLines: 10000
+        - logs:
+            name: sdk
+            namespace: {{ .Release.Namespace }}
+            selector:
+              - app.kubernetes.io/name={{ .Values.replicated.nameOverride | default "replicated" }}
+              - app.kubernetes.io/instance={{ .Release.Name }}
+            limits:
+              maxAge: "720h"
+              maxLines: 10000
