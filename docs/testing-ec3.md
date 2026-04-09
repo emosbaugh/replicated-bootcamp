@@ -18,7 +18,7 @@ mkdir -p .ssh
 ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N "" -C "ethan@cmx"
 ```
 
-The private key is gitignored. The public key is committed.
+Both the private and public key are gitignored — generate a new one each session.
 
 ## Create a Release
 
