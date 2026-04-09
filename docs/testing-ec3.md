@@ -192,6 +192,15 @@ replicated vm port expose <vm-id> --port 443 --protocol https --token $REPLICATE
 
 The app is accessible at the HTTPS URL. Your browser will show a certificate warning for the self-signed cert — proceed past it. HTTP traffic on port 80 redirects automatically to HTTPS.
 
+## Accessing the Cluster
+
+kubectl is bundled with the EC install at `/var/lib/playball-exe/bin/kubectl`:
+
+```bash
+sudo /var/lib/playball-exe/bin/kubectl get pods -A
+sudo /var/lib/playball-exe/bin/kubectl get ingress -A
+```
+
 ## Clean Up
 
 Always delete the VM and archive the customer when done:
