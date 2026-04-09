@@ -106,3 +106,9 @@ replicated:
   image:
     registry: images.emosbaugh.be
     repository: library/replicated-sdk-image
+
+# AI Commentary — set by KOTS config when ai_commentary_enabled license field is true
+aiCommentary:
+  provider: ""
+  openaiApiKey: ""
+  anthropicApiKey: ""

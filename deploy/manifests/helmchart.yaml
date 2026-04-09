@@ -23,3 +23,7 @@ spec:
       url: 'repl{{ ConfigOption "external_redis_url" }}'
     nextauth:
       secret: 'repl{{ ConfigOption "nextauth_secret" }}'
+    aiCommentary:
+      provider: 'repl{{ ConfigOption "ai_provider" }}'
+      openaiApiKey: 'repl{{ ConfigOption "openai_api_key" }}'
+      anthropicApiKey: 'repl{{ ConfigOption "anthropic_api_key" }}'

@@ -254,6 +254,15 @@
           "name": { "type": "string" }
         }
       }
+    },
+    "aiCommentary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string" },
+        "openaiApiKey": { "type": "string" },
+        "anthropicApiKey": { "type": "string" }
+      }
     }
   },
   "allOf": [
