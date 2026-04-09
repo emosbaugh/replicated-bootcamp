@@ -135,6 +135,35 @@ Browser (HTTP)  → CMX proxy → NodePort 80   → Traefik web entrypoint
                                               → 301 redirect to https://
 ```
 
+## E2E CI Validation (`e2e-ec3.yml`)
+
+Two changes to the existing e2e workflow:
+
+**1. Add `hostname` to config-values.** The field is required. Use a fixed CI hostname — no real DNS needed since validation happens from inside the VM:
+
+```yaml
+hostname:
+  value: "test.playball.example.com"
+```
+
+**2. Add a "Validate HTTPS" step** after install. SSH in and curl the NodePorts directly with an explicit `Host` header — no CMX port expose required:
+
+```bash
+# Assert HTTP redirects to HTTPS (301 or 308)
+HTTP_STATUS=$(curl -so /dev/null -w "%{http_code}" \
+  -H "Host: test.playball.example.com" http://10.0.0.11:80/)
+[ "$HTTP_STATUS" = "301" ] || [ "$HTTP_STATUS" = "308" ] || \
+  { echo "Expected redirect, got $HTTP_STATUS"; exit 1; }
+
+# Assert HTTPS serves the app (200)
+HTTPS_STATUS=$(curl -sko /dev/null -w "%{http_code}" \
+  -H "Host: test.playball.example.com" https://10.0.0.11:443/)
+[ "$HTTPS_STATUS" = "200" ] || \
+  { echo "Expected 200, got $HTTPS_STATUS"; exit 1; }
+```
+
+The `--insecure` flag (`-k`) is required since the cert is self-signed.
+
 ## Out of Scope
 
 - ACME/Let's Encrypt (requires publicly resolvable DNS and port 80/443 challenge access)
