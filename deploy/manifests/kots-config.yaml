@@ -9,8 +9,17 @@ spec:
       items:
         - name: postgresql_enabled
           title: Use Bundled PostgreSQL
+          help_text: "When enabled, a PostgreSQL instance is deployed inside the cluster. Disable to connect to an external database you manage."
           type: bool
           default: "1"
+        - name: postgresql_password
+          title: PostgreSQL Password
+          help_text: "Password for the bundled PostgreSQL instance. Generated automatically on first install; changing this after initial deployment requires a manual database password update."
+          type: password
+          hidden: true
+          readonly: false
+          value: '{{repl RandomString 32}}'
+          when: '{{repl ConfigOptionEquals "postgresql_enabled" "1"}}'
         - name: external_postgres_url
           title: External PostgreSQL URL
           help_text: "PostgreSQL connection string, e.g. postgres://user:pass@host:5432/dbname"
@@ -26,8 +35,17 @@ spec:
       items:
         - name: redis_enabled
           title: Use Bundled Redis
+          help_text: "When enabled, a Redis instance is deployed inside the cluster. Disable to connect to an external Redis server you manage."
           type: bool
           default: "1"
+        - name: redis_password
+          title: Redis Password
+          help_text: "Password for the bundled Redis instance. Generated automatically on first install; changing this after initial deployment requires a manual Redis password update."
+          type: password
+          hidden: true
+          readonly: false
+          value: '{{repl RandomString 32}}'
+          when: '{{repl ConfigOptionEquals "redis_enabled" "1"}}'
         - name: external_redis_url
           title: External Redis URL
           help_text: "Redis connection string, e.g. redis://host:6379"
@@ -51,6 +69,7 @@ spec:
       items:
         - name: nextauth_secret
           title: NextAuth Secret
+          help_text: "A random string used to sign and encrypt NextAuth session tokens. A secure 32-character value is generated automatically; only override if you need to share sessions across multiple installs."
           type: password
           hidden: true
           readonly: false
