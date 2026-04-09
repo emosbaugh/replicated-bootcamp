@@ -39,3 +39,27 @@ spec:
           hidden: true
           readonly: false
           value: '{{repl RandomString 32}}'
+
+    - name: ai_commentary
+      title: AI Commentary
+      when: '{{repl LicenseFieldValue "ai_commentary_enabled"}}'
+      items:
+        - name: ai_provider
+          title: AI Provider
+          type: select_one
+          default: openai
+          items:
+            - name: openai
+              title: OpenAI (GPT-4o)
+            - name: anthropic
+              title: Anthropic (Claude Haiku)
+
+        - name: openai_api_key
+          title: OpenAI API Key
+          type: password
+          when: '{{repl ConfigOptionEquals "ai_provider" "openai"}}'
+
+        - name: anthropic_api_key
+          title: Anthropic API Key
+          type: password
+          when: '{{repl ConfigOptionEquals "ai_provider" "anthropic"}}'
