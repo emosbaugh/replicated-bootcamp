@@ -43,8 +43,34 @@ spec:
       items:
         - name: hostname
           title: Hostname
-          help_text: "Hostname for the app, e.g. playball.example.com. Leave blank to accept traffic on any hostname."
+          help_text: "Hostname for the app, e.g. playball.example.com. Required when using Let's Encrypt. Leave blank to accept traffic on any hostname."
           type: text
+        - name: tls_mode
+          title: TLS Certificate Mode
+          type: select_one
+          default: self_signed
+          items:
+            - name: self_signed
+              title: Automatic - Self-Signed
+            - name: lets_encrypt
+              title: Automatic - Let's Encrypt
+            - name: manual
+              title: Manual Upload
+        - name: acme_email
+          title: Let's Encrypt Email
+          type: text
+          help_text: "Email address for Let's Encrypt registration and renewal notifications"
+          when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt"}}'
+        - name: tls_cert
+          title: TLS Certificate (PEM)
+          type: file
+          help_text: "PEM-encoded TLS certificate"
+          when: '{{repl ConfigOptionEquals "tls_mode" "manual"}}'
+        - name: tls_key
+          title: TLS Private Key (PEM)
+          type: file
+          help_text: "PEM-encoded TLS private key"
+          when: '{{repl ConfigOptionEquals "tls_mode" "manual"}}'
 
     - name: secrets
       title: Secrets
