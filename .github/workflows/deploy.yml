@@ -42,6 +42,10 @@ jobs:
           sed -i "s/^  tag: .*/  tag: ${{ steps.vars.outputs.image-tag }}/" deploy/charts/values.yaml
           sed -i "s/chartVersion: .*/chartVersion: ${{ steps.vars.outputs.version }}/" deploy/manifests/helmchart.yaml
           helm package deploy/charts -d deploy/manifests --version "${{ steps.vars.outputs.version }}"
+          helm repo add traefik https://helm.traefik.io/traefik
+          helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
+          helm repo add jetstack https://charts.jetstack.io
+          helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
 
       - name: Create and promote Replicated release
         uses: replicatedhq/replicated-actions/create-release@v1
