@@ -61,6 +61,11 @@ spec:
           type: text
           help_text: "Email address for Let's Encrypt registration and renewal notifications"
           when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt"}}'
+          required: true
+          validation:
+            regex:
+              pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+'
+              message: "Must be a valid email address"
         - name: tls_cert
           title: TLS Certificate (PEM)
           type: file
