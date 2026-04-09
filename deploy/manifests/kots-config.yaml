@@ -16,6 +16,10 @@ spec:
           help_text: "PostgreSQL connection string, e.g. postgres://user:pass@host:5432/dbname"
           type: password
           when: '{{repl ConfigOptionEquals "postgresql_enabled" "0"}}'
+          validation:
+            regex:
+              pattern: "^postgres(ql)?://[^[:space:]]+"
+              message: "Must be a valid PostgreSQL connection string (e.g. postgres://user:pass@host:5432/dbname)"
 
     - name: redis_config
       title: Redis
@@ -29,6 +33,10 @@ spec:
           help_text: "Redis connection string, e.g. redis://host:6379"
           type: password
           when: '{{repl ConfigOptionEquals "redis_enabled" "0"}}'
+          validation:
+            regex:
+              pattern: "^redis(s)?://[^[:space:]]+"
+              message: "Must be a valid Redis connection string (e.g. redis://host:6379)"
 
     - name: ingress
       title: Ingress
