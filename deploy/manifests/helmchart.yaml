@@ -10,6 +10,9 @@ spec:
   helmUpgradeFlags:
     - --timeout
     - 15m
+  builder:
+    nextauth:
+      secret: placeholder
   values:
     postgresql:
       enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
