@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getLicenseField } from '@/lib/license'
 
-const ALLOWED_FIELDS = ['advanced_stats_enabled'] as const
+const ALLOWED_FIELDS = ['advanced_stats_enabled', 'ai_commentary_enabled'] as const
 type AllowedField = typeof ALLOWED_FIELDS[number]
 
 export async function GET(

@@ -18,7 +18,7 @@ mkdir -p .ssh
 ssh-keygen -t ed25519 -f .ssh/id_ed25519 -N "" -C "ethan@cmx"
 ```
 
-The private key is gitignored. The public key is committed.
+Both the private and public key are gitignored — generate a new one each session.
 
 ## Create a Release
 
@@ -28,8 +28,21 @@ Package the chart and create a Replicated release:
 # CHART_VERSION must match the chartVersion in deploy/manifests/helmchart.yaml
 CHART_VERSION="0.1.0"
 RELEASE_VERSION="${CHART_VERSION}-ec3-test"
+PR_NUMBER="<your-pr-number>"  # e.g. 46 — used to select the right Docker image tag
+
+# Set the image tag to match the branch Docker image built by CI.
+# The default `main` tag won't have your branch's code.
+sed -i "s/^  tag: .*/  tag: pr-${PR_NUMBER}/" deploy/charts/values.yaml
+
 helm dependency update deploy/charts
 helm package deploy/charts -d deploy/manifests --version "$CHART_VERSION"
+
+# EC3 extensions (cert-manager, traefik) must be bundled as chart archives.
+# Without these the install will fail with "no chart archive found for ...".
+helm repo add traefik https://helm.traefik.io/traefik
+helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
+helm repo add jetstack https://charts.jetstack.io
+helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
 
 replicated release create \
   --yaml-dir deploy/manifests \
@@ -38,7 +51,9 @@ replicated release create \
   --token $REPLICATED_API_TOKEN \
   --app playball-exe
 
+# Clean up packaged archives and revert values.yaml
 rm deploy/manifests/*.tgz
+git checkout deploy/charts/values.yaml
 ```
 
 Note the channel slug (e.g. `unstable`) and release version from the output.
@@ -55,7 +70,18 @@ replicated customer create \
   --app playball-exe
 ```
 
-Note the license ID from the output.
+Note the customer ID from the output, then download the license to get the **license ID**
+(used in the `Authorization` header when downloading the installer — this is different from
+the customer ID):
+
+```bash
+LICENSE_ID=$(replicated customer download-license \
+  --customer <customer-id> \
+  --app playball-exe \
+  --token $REPLICATED_API_TOKEN \
+  | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
+echo "License ID: $LICENSE_ID"
+```
 
 ## Create a VM
 
@@ -135,8 +161,9 @@ ssh -i .ssh/id_ed25519 \
 On the VM, download and run the installer (the license is embedded in the tgz):
 
 ```bash
-# Replace <channel-slug>, <release-version>, and <license-id> with your values
+# Replace <channel-slug> and <release-version> with your values.
 # <release-version> is the --version passed to `replicated release create` (e.g. 0.1.0-ec3-test)
+# Authorization uses the licenseID from the license file — NOT the customer ID.
 curl -f "https://replicated.app/embedded/playball-exe/<channel-slug>/<release-version>" \
   -H "Authorization: <license-id>" \
   -o playball-exe.tgz

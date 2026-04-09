@@ -28,3 +28,7 @@ spec:
       enabled: true
       className: traefik
       hostname: 'repl{{ ConfigOption "hostname" }}'
+    aiCommentary:
+      provider: 'repl{{ ConfigOption "ai_provider" }}'
+      openaiApiKey: 'repl{{ ConfigOption "openai_api_key" }}'
+      anthropicApiKey: 'repl{{ ConfigOption "anthropic_api_key" }}'
