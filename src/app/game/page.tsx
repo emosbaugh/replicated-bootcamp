@@ -17,6 +17,7 @@ export default function GamePage() {
   const [starting, setStarting] = useState(false)
   const [simulating, setSimulating] = useState(false)
   const [error, setError] = useState('')
+  const [aiCommentaryEnabled, setAiCommentaryEnabled] = useState(false)
 
   useEffect(() => {
     if (status === 'unauthenticated') router.push('/')
@@ -31,6 +32,14 @@ export default function GamePage() {
   useEffect(() => {
     if (status === 'authenticated') loadCurrentGame()
   }, [status, loadCurrentGame])
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    fetch('/api/license/fields/ai_commentary_enabled')
+      .then((r) => r.json())
+      .then(({ enabled }) => setAiCommentaryEnabled(!!enabled))
+      .catch(() => setAiCommentaryEnabled(false))
+  }, [status])
 
   async function startGame() {
     setStarting(true)
@@ -165,6 +174,7 @@ export default function GamePage() {
           batter={gameState.currentBatter}
           lastRoll={lastRoll}
           onDone={onAtBatDone}
+          aiCommentaryEnabled={aiCommentaryEnabled}
         />
       ) : (
         <AsciiBoard

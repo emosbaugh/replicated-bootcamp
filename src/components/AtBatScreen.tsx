@@ -14,6 +14,7 @@ interface Props {
   batter: GameState['currentBatter']
   lastRoll: GameState['lastRoll']
   onDone: () => void
+  aiCommentaryEnabled: boolean
 }
 
 function contactBonus(c: number) { return Math.round((c - 5.5) / 2.25) }
@@ -28,7 +29,7 @@ const TOP = '╔' + '═'.repeat(W) + '╗'
 const MID = '╠' + '═'.repeat(W) + '╣'
 const BOT = '╚' + '═'.repeat(W) + '╝'
 
-export function AtBatScreen({ batter, lastRoll, onDone }: Props) {
+export function AtBatScreen({ batter, lastRoll, onDone, aiCommentaryEnabled }: Props) {
   const [die1, setDie1] = useState<number | null>(null)
   const [die2, setDie2] = useState<number | null>(null)
   const [phase, setPhase] = useState<'rolling' | 'landed' | 'done'>('rolling')
@@ -64,7 +65,7 @@ export function AtBatScreen({ batter, lastRoll, onDone }: Props) {
   }, [phase])
 
   useEffect(() => {
-    if (phase !== 'done' || !lastRoll) return
+    if (phase !== 'done' || !lastRoll || !aiCommentaryEnabled) return
     const controller = new AbortController()
     const outcome = OUTCOME_TABLE[lastRoll.adjusted] ?? ''
     setCommentary('loading')
@@ -78,7 +79,7 @@ export function AtBatScreen({ batter, lastRoll, onDone }: Props) {
         if (err.name !== 'AbortError') setCommentary(null)
       })
     return () => controller.abort()
-  }, [phase, lastRoll, batter.name])
+  }, [phase, lastRoll, batter.name, aiCommentaryEnabled])
 
   const cb = contactBonus(batter.contact)
   const pb = powerBonus(batter.power)
