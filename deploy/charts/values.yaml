@@ -9,7 +9,7 @@ global:
 # Container image for the app (and migration init container)
 image:
   registry: images.emosbaugh.be/proxy/playball-exe
-  repository: docker.io/replemos/playball.exe
+  repository: docker.io/replemosteam/playball.exe
   tag: main
   pullPolicy: Always
 
