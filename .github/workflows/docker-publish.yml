@@ -33,4 +33,4 @@ jobs:
           context: .
           file: deploy/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/playball.exe:${{ inputs.tag }}
+          tags: replemosteam/playball.exe:${{ inputs.tag }}
