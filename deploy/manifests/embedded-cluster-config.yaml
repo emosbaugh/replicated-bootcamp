@@ -15,17 +15,20 @@ spec:
         namespace: cert-manager
         weight: 10
         values:
-          imageRegistry: '{{repl ReplicatedImageRegistry "quay.io" }}'
           image:
+            registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
             repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-controller" }}'
           cainjector:
             image:
+              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
               repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-cainjector" }}'
           webhook:
             image:
+              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
               repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-webhook" }}'
           startupapicheck:
             image:
+              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
               repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-startupapicheck" }}'
           crds:
             enabled: true
