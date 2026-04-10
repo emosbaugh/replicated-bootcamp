@@ -16,16 +16,20 @@ spec:
         weight: 10
         values:
           image:
-            registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+            registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+            repository: '{{repl ReplicatedImageRepository (HelmValue ".image.repository") true }}'
           cainjector:
             image:
-              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+              repository: '{{repl ReplicatedImageRepository (HelmValue ".cainjector.image.repository") true }}'
           webhook:
             image:
-              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+              repository: '{{repl ReplicatedImageRepository (HelmValue ".webhook.image.repository") true }}'
           startupapicheck:
             image:
-              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+              registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+              repository: '{{repl ReplicatedImageRepository (HelmValue ".startupapicheck.image.repository") true }}'
           crds:
             enabled: true
         builder:
@@ -47,7 +51,8 @@ spec:
         namespace: traefik
         values:
           image:
-            registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+            registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+            repository: '{{repl ReplicatedImageRepository (HelmValue ".image.repository") true }}'
           service:
             type: NodePort
           ports:
