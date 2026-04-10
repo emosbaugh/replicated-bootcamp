@@ -9,7 +9,7 @@ spec:
   releaseName: playball-exe
   helmUpgradeFlags:
     - --timeout
-    - 10m
+    - 15m
   builder:
     nextauth:
       secret: placeholder
