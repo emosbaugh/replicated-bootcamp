@@ -85,6 +85,21 @@ jobs:
           promote-channel: pr-${{ github.event.pull_request.number }}
           version: ${{ steps.set-version.outputs.version }}
 
+      - name: Trigger airgap bundle build
+        run: |
+          APP_ID=$(curl -sf "https://api.replicated.com/vendor/v3/apps" \
+            -H "Authorization: ${{ secrets.REPLICATED_API_TOKEN }}" \
+            | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
+          CHANNEL_SLUG="${{ steps.create-release.outputs.channel-slug }}"
+          CHANNEL=$(curl -sf "https://api.replicated.com/vendor/v3/app/${APP_ID}/channels" \
+            -H "Authorization: ${{ secrets.REPLICATED_API_TOKEN }}" \
+            | jq --arg slug "$CHANNEL_SLUG" '.channels[] | select(.channelSlug == $slug)')
+          CHANNEL_ID=$(echo "$CHANNEL" | jq -r '.id')
+          RELEASE_SEQ=$(echo "$CHANNEL" | jq -r '.releaseSequence')
+          curl -sf -X POST \
+            "https://api.replicated.com/vendor/v3/app/${APP_ID}/channel/${CHANNEL_ID}/release/${RELEASE_SEQ}/airgap/build" \
+            -H "Authorization: ${{ secrets.REPLICATED_API_TOKEN }}"
+
   e2e:
     needs: [release]
     uses: ./.github/workflows/e2e.yml
