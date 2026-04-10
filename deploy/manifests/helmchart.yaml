@@ -18,13 +18,13 @@ spec:
       image:
         registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
     postgresql:
-      enabled: 'repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}'
+      enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
       image:
         registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
     externalDatabase:
       url: 'repl{{ ConfigOption "external_postgres_url" }}'
     redis:
-      enabled: 'repl{{ ConfigOptionEquals "redis_enabled" "1" }}'
+      enabled: repl{{ ConfigOptionEquals "redis_enabled" "1" }}
       image:
         registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
       replica:
