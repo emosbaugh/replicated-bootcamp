@@ -105,8 +105,18 @@ jobs:
       version: ${{ needs.release.outputs.version }}
     secrets: inherit
 
+  e2e-ec3-airgap:
+    needs: [release]
+    uses: ./.github/workflows/e2e-ec3-airgap.yml
+    with:
+      image-tag: pr-${{ github.event.pull_request.number }}
+      pr-number: ${{ github.event.pull_request.number }}
+      channel-slug: ${{ needs.release.outputs.channel-slug }}
+      version: ${{ needs.release.outputs.version }}
+    secrets: inherit
+
   archive-channel:
-    needs: [release, e2e, e2e-ec3]
+    needs: [release, e2e, e2e-ec3, e2e-ec3-airgap]
     if: needs.release.result == 'success'
     runs-on: ubuntu-latest
     steps:
