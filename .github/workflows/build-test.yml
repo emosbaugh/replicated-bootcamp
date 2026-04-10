@@ -100,13 +100,12 @@ jobs:
           APP_ID=$(replicated api get /v3/apps \
             --token ${{ secrets.REPLICATED_API_TOKEN }} \
             | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
-          CHANNEL=$(replicated api get /v3/app/${APP_ID}/channels \
+          CHANNEL_ID=$(replicated api get /v3/app/${APP_ID}/channels \
             --token ${{ secrets.REPLICATED_API_TOKEN }} \
-            | jq --arg slug "$CHANNEL_SLUG" '.channels[] | select(.channelSlug == $slug)')
-          CHANNEL_ID=$(echo "$CHANNEL" | jq -r '.id')
-          RELEASE_SEQ=$(echo "$CHANNEL" | jq -r '.releaseSequence')
-          replicated api post /v3/app/${APP_ID}/channel/${CHANNEL_ID}/release/${RELEASE_SEQ}/airgap/build \
-            --token ${{ secrets.REPLICATED_API_TOKEN }}
+            | jq -r --arg slug "$CHANNEL_SLUG" '.channels[] | select(.channelSlug == $slug) | .id')
+          replicated api post /v3/app/${APP_ID}/channel/${CHANNEL_ID}/releases/airgap \
+            --token ${{ secrets.REPLICATED_API_TOKEN }} \
+            -b '{}'
 
   e2e:
     needs: [release]
