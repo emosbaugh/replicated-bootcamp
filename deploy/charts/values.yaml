@@ -3,12 +3,12 @@ global:
   security:
     allowInsecureImages: true
   # Propagates to all subcharts (postgresql, redis, replicated sdk)
-  imageRegistry: images.emosbaugh.be/proxy/playball-exe
   imagePullSecrets:
     - name: enterprise-pull-secret
 
 # Container image for the app (and migration init container)
 image:
+  registry: images.emosbaugh.be/proxy/playball-exe
   repository: docker.io/replemos/playball.exe
   tag: main
   pullPolicy: Always
@@ -57,6 +57,8 @@ ingress:
 # Set postgresql.enabled=false and provide externalDatabase.url to use your own PostgreSQL
 postgresql:
   enabled: true
+  image:
+    registry: images.emosbaugh.be/proxy/playball-exe
   auth:
     database: baseball
     username: baseball
@@ -79,6 +81,8 @@ externalDatabase:
 # Set redis.enabled=false and provide externalRedis.url to use your own Redis
 redis:
   enabled: true
+  image:
+    registry: images.emosbaugh.be/proxy/playball-exe
   auth:
     enabled: false
   master:
