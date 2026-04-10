@@ -42,11 +42,22 @@ replicated channel inspect <channel-id> --token $REPLICATED_API_TOKEN --app <slu
 ## Release
 
 ```bash
-# Create a release from a directory of YAML manifests
-replicated release create --yaml-dir ./manifests --version 1.0.0 --token $REPLICATED_API_TOKEN --app <slug>
+# See docs/testing-ec3.md for the full workflow. Summary:
+# 1. Package the main chart
+helm dependency update deploy/charts
+helm package deploy/charts -d deploy/manifests --version "$CHART_VERSION"
 
-# Create and immediately promote to a channel
-replicated release create --yaml-dir ./manifests --version 1.0.0 --promote Unstable --token $REPLICATED_API_TOKEN --app <slug>
+# 2. Pull EC extension charts (cert-manager, traefik) — required for EC releases
+helm repo add traefik https://helm.traefik.io/traefik
+helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
+helm repo add jetstack https://charts.jetstack.io
+helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
+
+# 3. Create and promote the release
+replicated release create --yaml-dir deploy/manifests --version "$RELEASE_VERSION" --promote Unstable --token $REPLICATED_API_TOKEN --app playball-exe
+
+# 4. Clean up
+rm deploy/manifests/*.tgz
 
 # Promote an existing release sequence to a channel
 replicated release promote <sequence> <channel-id> --version 1.0.0 --token $REPLICATED_API_TOKEN --app <slug>
@@ -123,6 +134,8 @@ Common endpoints:
 
 ## Common Mistakes
 
+- **Helm-based releases require packaged charts**: run `helm dependency update` + `helm package` before `release create`, and also `helm pull` any EC extension charts (cert-manager, traefik). See `docs/testing-ec3.md` for the full workflow. Without these, the release will fail with "failed to find chart for ...".
 - Forgetting `--token` — the CLI will fail with an auth error; always pass it explicitly
 - Using `--yaml` instead of `--yaml-dir` for multi-file manifests
 - Passing a channel name to `release promote` — it requires the channel **ID**, not name (use `channel ls` to find it)
+- **Semver-enabled channels**: If a channel has semver enabled, promoting a release with a version lower than the channel's current version will silently do nothing (the CLI reports success but the channel doesn't update). Always run `channel inspect <id>` first to check the current version, then use a version string that is strictly greater. Example: if current is `2026.99.2-foo`, use `2026.99.3` or higher.

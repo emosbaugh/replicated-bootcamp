@@ -20,13 +20,13 @@ spec:
     postgresql:
       enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
       image:
-        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
     externalDatabase:
       url: 'repl{{ ConfigOption "external_postgres_url" }}'
     redis:
       enabled: repl{{ ConfigOptionEquals "redis_enabled" "1" }}
       image:
-        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
+        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
       replica:
         replicaCount: 1
     externalRedis:
