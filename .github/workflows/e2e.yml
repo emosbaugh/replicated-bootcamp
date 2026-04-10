@@ -153,7 +153,7 @@ jobs:
         if: always() && steps.create-cluster.outcome != 'skipped' && steps.collect-support-bundle.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: support-bundle-${{ github.run_id }}
+          name: support-bundle-k8s-pr-${{ inputs.pr-number }}-${{ github.run_number }}
           path: /tmp/support-bundle.tar.gz
           retention-days: 7
 
