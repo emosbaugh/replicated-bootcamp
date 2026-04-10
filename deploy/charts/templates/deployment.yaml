@@ -22,7 +22,7 @@ spec:
       {{- end }}
       initContainers:
         - name: wait-for-db
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - node
@@ -40,7 +40,7 @@ spec:
             - secretRef:
                 name: {{ include "playball-exe.fullname" . }}
         - name: migrate
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - node
@@ -53,7 +53,7 @@ spec:
           resources:
             {{- toYaml .Values.initContainers.resources | nindent 12 }}
         - name: seed
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
             - node
@@ -65,7 +65,7 @@ spec:
             {{- toYaml .Values.initContainers.resources | nindent 12 }}
       containers:
         - name: app
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           ports:
             - name: http

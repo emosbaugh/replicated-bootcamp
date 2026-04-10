@@ -14,6 +14,11 @@ spec:
     nextauth:
       secret: placeholder
   values:
+    global:
+      imageRegistry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
+    replicated:
+      image:
+        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}/proxy/playball-exe'
     postgresql:
       enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
     externalDatabase:
