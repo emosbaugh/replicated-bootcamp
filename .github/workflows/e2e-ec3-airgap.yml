@@ -160,7 +160,7 @@ jobs:
             sleep 10
           done
 
-      - name: Download installer and airgap bundle on VM
+      - name: Download installer with airgap bundle on VM
         env:
           LICENSE_ID: ${{ steps.create-customer.outputs.license-id }}
           CHANNEL: pr-${{ inputs.pr-number }}
