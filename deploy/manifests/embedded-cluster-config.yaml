@@ -17,19 +17,19 @@ spec:
         values:
           image:
             registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-            repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-controller" }}'
+            repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-controller" }}'
           cainjector:
             image:
               registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-cainjector" }}'
+              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-cainjector" }}'
           webhook:
             image:
               registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-webhook" }}'
+              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-webhook" }}'
           startupapicheck:
             image:
               registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "jetstack/cert-manager-startupapicheck" }}'
+              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-startupapicheck" }}'
           crds:
             enabled: true
       - chart:
@@ -40,7 +40,7 @@ spec:
         values:
           image:
             registry: '{{repl ReplicatedImageRegistry "docker.io" }}'
-            repository: '{{repl ReplicatedImageRepository "library/traefik" }}'
+            repository: '{{repl ReplicatedImageRepository "docker.io/library/traefik" }}'
           service:
             type: NodePort
           ports:
