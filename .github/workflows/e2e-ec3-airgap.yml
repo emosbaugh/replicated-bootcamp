@@ -181,8 +181,9 @@ jobs:
             "ci@$SSH_HOST" \
             "curl -f 'https://replicated.app/embedded/playball-exe/${CHANNEL}/${VERSION}' \
                -H 'Authorization: ${LICENSE_ID}' -o playball-exe.tgz && \
+             mkdir -p assets && \
              curl -f 'https://replicated.app/embedded/playball-exe/${CHANNEL}/${VERSION}?airgap=true' \
-               -H 'Authorization: ${LICENSE_ID}' -o playball-exe.airgap"
+               -H 'Authorization: ${LICENSE_ID}' -o assets/playball-exe.airgap"
 
       - name: Enable airgap network policy
         run: |
