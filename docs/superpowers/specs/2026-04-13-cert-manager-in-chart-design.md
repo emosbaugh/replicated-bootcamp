@@ -77,9 +77,12 @@ keys: access-key-id, secret-access-key
 
 ## values.yaml
 
-New `tls` block added:
+New `certManager` and `tls` blocks added:
 
 ```yaml
+certManager:
+  enabled: true          # set false to skip all cert-manager resources (ClusterIssuers, Certificate, TLSStore, Route 53 secret)
+
 tls:
   mode: self_signed      # self_signed | lets_encrypt | lets_encrypt_dns01 | manual
   acmeEmail: ""
@@ -90,6 +93,8 @@ tls:
     accessKeyId: ""
     secretAccessKey: ""
 ```
+
+All three cert-manager template files are gated behind `{{- if .Values.certManager.enabled }}`. When disabled, no cert-manager CRDs, Secrets, or TLSStore resources are created — useful for standalone chart installs without cert-manager present.
 
 The existing `ingress.tls` array in values.yaml is unrelated (unused by KOTS install) and is left as-is.
 
