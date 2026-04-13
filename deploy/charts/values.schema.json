@@ -231,6 +231,27 @@
       },
       "required": ["secret", "url"]
     },
+    "replicated": {
+      "type": "object"
+    },
+    "imagePullSecrets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        }
+      }
+    },
+    "aiCommentary": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "type": "string" },
+        "openaiApiKey": { "type": "string" },
+        "anthropicApiKey": { "type": "string" }
+      }
+    },
     "certManager": {
       "type": "object",
       "additionalProperties": false,
@@ -284,27 +305,6 @@
             }
           }
         }
-      }
-    },
-    "replicated": {
-      "type": "object"
-    },
-    "imagePullSecrets": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "name": { "type": "string" }
-        }
-      }
-    },
-    "aiCommentary": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "provider": { "type": "string" },
-        "openaiApiKey": { "type": "string" },
-        "anthropicApiKey": { "type": "string" }
       }
     }
   },
