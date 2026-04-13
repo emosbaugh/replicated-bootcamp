@@ -49,6 +49,7 @@ spec:
       openaiApiKey: 'repl{{ ConfigOption "openai_api_key" }}'
       anthropicApiKey: 'repl{{ ConfigOption "anthropic_api_key" }}'
     certManager:
+      enabled: true
       mode: 'repl{{ ConfigOption "tls_mode" }}'
       acme:
         email: 'repl{{ ConfigOption "acme_email" }}'
