@@ -1,0 +1,38 @@
+{{- if .Values.certManager.enabled }}
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned
+spec:
+  selfSigned: {}
+{{- if or (eq .Values.certManager.mode "lets_encrypt") (eq .Values.certManager.mode "lets_encrypt_dns01") }}
+---
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: {{ .Values.certManager.acme.email | quote }}
+    privateKeySecretRef:
+      name: letsencrypt-account-key
+    solvers:
+      {{- if eq .Values.certManager.mode "lets_encrypt" }}
+      - http01:
+          ingress:
+            ingressClassName: traefik
+      {{- else }}
+      - dns01:
+          route53:
+            region: us-east-1
+            hostedZoneID: {{ .Values.certManager.acme.dns01.route53.hostedZoneId | quote }}
+            accessKeyIDSecretRef:
+              name: cert-manager-route53-credentials
+              key: access-key-id
+            secretAccessKeySecretRef:
+              name: cert-manager-route53-credentials
+              key: secret-access-key
+      {{- end }}
+{{- end }}
+{{- end }}

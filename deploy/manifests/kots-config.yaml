@@ -71,19 +71,39 @@ spec:
             - name: self_signed
               title: Automatic - Self-Signed
             - name: lets_encrypt
-              title: Automatic - Let's Encrypt
+              title: Automatic - Let's Encrypt (HTTP-01)
+            - name: lets_encrypt_dns01
+              title: Automatic - Let's Encrypt (DNS-01 / Route 53)
             - name: manual
               title: Manual Upload
         - name: acme_email
           title: Let's Encrypt Email
           type: text
           help_text: "Email address for Let's Encrypt registration and renewal notifications"
-          when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt"}}'
+          when: '{{repl or (ConfigOptionEquals "tls_mode" "lets_encrypt") (ConfigOptionEquals "tls_mode" "lets_encrypt_dns01")}}'
           required: true
           validation:
             regex:
               pattern: '^[^@\s]+@[^@\s]+\.[^@\s]+'
               message: "Must be a valid email address"
+        - name: route53_hosted_zone_id
+          title: Route 53 Hosted Zone ID
+          help_text: "The Route 53 Hosted Zone ID for your domain (e.g. Z0123456789ABC). Found in the Route 53 console under Hosted zones."
+          type: text
+          when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt_dns01"}}'
+          required: true
+        - name: route53_access_key_id
+          title: AWS Access Key ID
+          help_text: "IAM access key ID. The IAM user needs route53:ChangeResourceRecordSets, route53:ListResourceRecordSets, and route53:GetChange permissions on the hosted zone."
+          type: text
+          when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt_dns01"}}'
+          required: true
+        - name: route53_secret_access_key
+          title: AWS Secret Access Key
+          help_text: "IAM secret access key corresponding to the access key ID above."
+          type: password
+          when: '{{repl ConfigOptionEquals "tls_mode" "lets_encrypt_dns01"}}'
+          required: true
         - name: tls_cert
           title: TLS Certificate (PEM)
           type: file

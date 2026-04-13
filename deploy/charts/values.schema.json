@@ -251,6 +251,61 @@
         "openaiApiKey": { "type": "string" },
         "anthropicApiKey": { "type": "string" }
       }
+    },
+    "certManager": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "mode": {
+          "type": "string",
+          "enum": ["self_signed", "lets_encrypt", "lets_encrypt_dns01", "manual"]
+        },
+        "acme": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "email": {
+              "type": "string"
+            },
+            "dns01": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "route53": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "hostedZoneId": {
+                      "type": "string"
+                    },
+                    "accessKeyId": {
+                      "type": "string"
+                    },
+                    "secretAccessKey": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "manual": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "cert": {
+              "type": "string"
+            },
+            "key": {
+              "type": "string"
+            }
+          }
+        }
+      }
     }
   },
   "allOf": [

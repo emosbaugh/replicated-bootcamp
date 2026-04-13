@@ -105,6 +105,21 @@ nextauth:
   secret: ""
   url: "http://localhost:3000"
 
+certManager:
+  enabled: false
+  # self_signed | lets_encrypt | lets_encrypt_dns01 | manual
+  mode: self_signed
+  acme:
+    email: ""
+    dns01:
+      route53:
+        hostedZoneId: ""
+        accessKeyId: ""
+        secretAccessKey: ""
+  manual:
+    cert: ""  # base64-encoded PEM certificate
+    key: ""   # base64-encoded PEM private key
+
 # AI Commentary — set by KOTS config when ai_commentary_enabled license field is true
 aiCommentary:
   provider: ""

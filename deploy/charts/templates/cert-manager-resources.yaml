@@ -1,0 +1,38 @@
+{{- if .Values.certManager.enabled }}
+{{- if ne .Values.certManager.mode "manual" }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: traefik-default-tls
+  namespace: traefik
+spec:
+  secretName: traefik-default-tls
+  dnsNames:
+    - {{ default "cluster.local" .Values.ingress.hostname | quote }}
+  issuerRef:
+    name: {{ if or (eq .Values.certManager.mode "lets_encrypt") (eq .Values.certManager.mode "lets_encrypt_dns01") }}letsencrypt{{ else }}selfsigned{{ end }}
+    kind: ClusterIssuer
+{{- end }}
+---
+apiVersion: traefik.io/v1alpha1
+kind: TLSStore
+metadata:
+  name: default
+  namespace: traefik
+spec:
+  defaultCertificate:
+    secretName: traefik-default-tls
+{{- if eq .Values.certManager.mode "manual" }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: traefik-default-tls
+  namespace: traefik
+type: kubernetes.io/tls
+data:
+  tls.crt: {{ .Values.certManager.manual.cert | quote }}
+  tls.key: {{ .Values.certManager.manual.key | quote }}
+{{- end }}
+{{- end }}
