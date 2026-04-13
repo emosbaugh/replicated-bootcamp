@@ -45,15 +45,7 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Inferred from reading `types.go` source directly and confirming via docs that support bundles are always embedded in chart templates (as a Secret or CRD) and never path-referenced in `.replicated`. Took ~15 minutes of cross-referencing source and docs.
 **Severity:** annoyance
 
-## Entry 6 — 2026-04-07 — annoyance
-
-**Trying to:** Determine whether the `.replicated` file needs a support bundle spec path, similar to how preflights are configured with an explicit `path` field.
-**Expected:** Docs or CLI help to clearly explain whether support bundles are referenced in `.replicated` (like preflights are via `PreflightConfig.Path`) or whether they live only as in-chart manifests.
-**Actual:** The `Config` struct in `pkg/tools/types.go` has a `Preflights` field with an explicit path, but no equivalent `SupportBundles` field. The linting section has a `SupportBundle` linter entry, but this only controls whether the linter checks for a spec — it does not reference a spec path. The docs at `support-bundle-customizing` make no mention of `.replicated` at all. The asymmetry between preflights (path-configured) and support bundles (chart-embedded only) is undocumented.
-**Resolution:** Inferred from reading `types.go` source directly and confirming via docs that support bundles are always embedded in chart templates (as a Secret or CRD) and never path-referenced in `.replicated`. Took ~15 minutes of cross-referencing source and docs.
-**Severity:** annoyance
-
-## Entry 7 — 2026-04-07 — blocker
+## Entry 6 — 2026-04-07 — blocker
 
 **Trying to:** Specify the output file path for the `support-bundle` CLI in a CI step.
 **Expected:** `--output-file` flag to exist, as it does in many similar CLIs.
@@ -61,7 +53,7 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Found the correct flag (`--output`) by reading cobra flag definitions in `cmd/troubleshoot/cli/root.go` on GitHub. Took ~20 minutes of searching docs and fetching source files. Caught only after CI failure.
 **Severity:** blocker
 
-## Entry 8 — 2026-04-08 — blocker
+## Entry 7 — 2026-04-08 — blocker
 
 **Trying to:** Use the `http` collector to check `/api/healthz` and analyze the response with `textAnalyze`
 **Expected:** The collector would make the HTTP request in-cluster (since the bundle spec is deployed as a cluster resource), and the file would land at `http/{name}/response.json` as the `fileName` field suggested
@@ -69,7 +61,7 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Replaced the `http` collector with an `exec` collector that runs `wget` inside the app pod, making the request always in-cluster regardless of where `support-bundle` runs.
 **Severity:** blocker
 
-## Entry 9 — 2026-04-08 — blocker
+## Entry 8 — 2026-04-08 — blocker
 
 **Trying to:** Create a CMX VM using `replicated vm create` for the first time
 **Expected:** VM creation to succeed, or a clear error if the account lacks permissions
@@ -77,7 +69,7 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Unclear from the warning message that RBAC was the root cause; the ToS message is a red herring that sends you down the wrong path
 **Severity:** blocker
 
-## Entry 10 — 2026-04-08 — annoyance
+## Entry 9 — 2026-04-08 — annoyance
 
 **Trying to:** Enable embedded cluster download on a customer via the `replicatedhq/replicated-actions/create-customer@v1` GitHub Action
 **Expected:** `is-embedded-cluster-download-enabled` to be a valid input, consistent with `is-kots-install-enabled` which the action does support
@@ -85,7 +77,7 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Resolution:** Replaced the action with a direct `replicated customer create --embedded-cluster-download` CLI call; required parsing JSON output to capture customer-id and license-id that the action would have provided as named outputs
 **Severity:** annoyance
 
-## Entry 11 — 2026-04-08 — blocker
+## Entry 10 — 2026-04-08 — blocker
 
 **Trying to:** Configure an `exec` collector to run a health check inside the app pod and analyze the output with `textAnalyze`
 **Expected:** `containerName` selects which container to exec into and appears in the output path; `localhost` resolves correctly inside the container; the stdout file is named `{collectorName}-stdout`
