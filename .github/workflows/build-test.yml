@@ -47,10 +47,17 @@ jobs:
           tar xf replicated.tar.gz replicated && rm replicated.tar.gz
           sudo mv replicated /usr/local/bin/replicated
 
+      - name: Package Helm chart
+        run: |
+          helm package deploy/charts -d deploy/manifests --version "0.1.0"
+          helm repo add traefik https://helm.traefik.io/traefik
+          helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
+          helm repo add jetstack https://charts.jetstack.io
+          helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
+
       - name: Replicated release lint
         run: |
-          helm package deploy/charts -d /tmp
-          replicated release lint --chart /tmp/playball-exe-*.tgz
+          replicated release lint
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
           REPLICATED_APP: playball-exe
