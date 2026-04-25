@@ -7,7 +7,7 @@ charts: [
   },
 ]
 manifests:
-  - "./deploy/manifests"
+  - "./deploy/manifests/*"
 repl-lint:
   version: 1
   linters:
@@ -16,4 +16,6 @@ repl-lint:
     preflight:
       disabled: false
     support-bundle:
+      disabled: false
+    embedded-cluster:
       disabled: false
