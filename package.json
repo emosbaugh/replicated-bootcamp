@@ -24,6 +24,9 @@
     "react": "19.2.4",
     "react-dom": "19.2.4"
   },
+  "engines": {
+    "node": ">=20"
+  },
   "prisma": {
     "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
