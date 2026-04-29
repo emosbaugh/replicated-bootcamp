@@ -1,2 +1,2 @@
 app: playball-exe
-yaml-dir: deploy/manifests
+yaml-dir: deploy/.build

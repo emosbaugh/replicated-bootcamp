@@ -22,7 +22,7 @@ helm-lint: deploy/.build-charts
 	  --set ingress.hostname=example.com \
 	  --set ingress.className=traefik
 
-replicated-lint:
+replicated-lint: deploy/.build-charts
 	replicated release lint
 
 lint: helm-lint replicated-lint
