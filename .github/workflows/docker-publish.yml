@@ -20,9 +20,13 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -32,9 +36,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: .
           file: deploy/Dockerfile
           push: true
           tags: ghcr.io/replemos/playball.exe:${{ inputs.tag }}
+
+      - name: Sign image
+        run: cosign sign --yes ghcr.io/replemos/playball.exe@${{ steps.build.outputs.digest }}
