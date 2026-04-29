@@ -1,13 +1,13 @@
 appSlug: "playball-exe"
 charts: [
   {
-    path: "./deploy/charts",
+    path: "./deploy/.build-charts",
     chartVersion: "",
     appVersion: "",
   },
 ]
 manifests:
-  - "./deploy/manifests/*"
+  - "./deploy/.build/*"
 repl-lint:
   version: 1
   linters:
