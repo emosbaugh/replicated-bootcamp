@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: read
       packages: write
+      id-token: write
     with:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
