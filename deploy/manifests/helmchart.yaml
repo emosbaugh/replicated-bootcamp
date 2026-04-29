@@ -15,24 +15,20 @@ spec:
       secret: placeholder
   values:
     image:
-      registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
-      repository: 'repl{{ ReplicatedImageRepository "ghcr.io/replemos/playball.exe" }}'
+      registry: 'repl{{ ReplicatedImageRegistry (HelmValue ".image.registry") }}'
     replicated:
       image:
-        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
-        repository: 'repl{{ ReplicatedImageRepository "library/replicated-sdk-image" true }}'
+        registry: 'repl{{ ReplicatedImageRegistry (HelmValue ".replicated.image.registry") }}'
     postgresql:
       enabled: repl{{ ConfigOptionEquals "postgresql_enabled" "1" }}
       image:
-        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
-        repository: 'repl{{ ReplicatedImageRepository "registry-1.docker.io/bitnami/postgresql" }}'
+        registry: 'repl{{ ReplicatedImageRegistry (HelmValue ".postgresql.image.registry") }}'
     externalDatabase:
       url: 'repl{{ ConfigOption "external_postgres_url" }}'
     redis:
       enabled: repl{{ ConfigOptionEquals "redis_enabled" "1" }}
       image:
-        registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
-        repository: 'repl{{ ReplicatedImageRepository "registry-1.docker.io/bitnami/redis" }}'
+        registry: 'repl{{ ReplicatedImageRegistry (HelmValue ".redis.image.registry") }}'
       replica:
         replicaCount: 1
     externalRedis:
