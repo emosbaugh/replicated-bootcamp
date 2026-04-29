@@ -25,7 +25,7 @@ spec:
               repository: '{{repl ReplicatedImageName (HelmValue ".webhook.image.repository") }}'
           startupapicheck:
             image:
-              repository: '{{repl ReplicatedImageName (HelmValue ".cainjector.image.repository") }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".startupapicheck.image.repository") }}'
           crds:
             enabled: true
       - chart:
