@@ -51,3 +51,4 @@ next-env.d.ts
 test-results/
 deploy/charts/**/*.tgz
 deploy/.build/
+deploy/.build-charts/
