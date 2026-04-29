@@ -18,6 +18,15 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
 
+  scan:
+    needs: [build]
+    uses: ./.github/workflows/image-scan.yml
+    with:
+      tag: pr-${{ github.event.pull_request.number }}
+    permissions:
+      packages: read
+    secrets: inherit
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -67,7 +76,7 @@ jobs:
           REPLICATED_APP: playball-exe
 
   release:
-    needs: [build, lint]
+    needs: [build, lint, scan]
     runs-on: ubuntu-latest
     outputs:
       channel-slug: ${{ steps.create-release.outputs.channel-slug }}
