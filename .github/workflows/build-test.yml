@@ -23,8 +23,6 @@ jobs:
     uses: ./.github/workflows/image-scan.yml
     with:
       tag: pr-${{ github.event.pull_request.number }}
-    permissions:
-      packages: read
     secrets: inherit
 
   lint:
