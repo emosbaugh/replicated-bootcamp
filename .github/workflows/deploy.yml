@@ -25,6 +25,8 @@ jobs:
   scan:
     needs: [docker]
     uses: ./.github/workflows/image-scan.yml
+    permissions:
+      packages: read
     with:
       tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
     secrets: inherit

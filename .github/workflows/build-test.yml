@@ -21,6 +21,8 @@ jobs:
   scan:
     needs: [build]
     uses: ./.github/workflows/image-scan.yml
+    permissions:
+      packages: read
     with:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
