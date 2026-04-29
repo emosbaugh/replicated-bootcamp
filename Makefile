@@ -3,13 +3,14 @@ include deploy/versions.env
 CHART_VERSION ?= 0.1.0-dev
 IMAGE_TAG ?= main
 
-.PHONY: all test docker-build helm-lint replicated-lint lint package-charts dev-setup dev-run
-
+.PHONY: all
 all: test lint
 
+.PHONY: test
 test:
 	npm test
 
+.PHONY: docker-build
 docker-build:
 	docker build -f deploy/Dockerfile \
 	  --build-arg SUPPORT_BUNDLE_VERSION=$(SUPPORT_BUNDLE_VERSION) \
@@ -18,6 +19,7 @@ docker-build:
 deploy/.build-charts:
 	./deploy/scripts/package-charts.sh $(CHART_VERSION) $(IMAGE_TAG)
 
+.PHONY: helm-lint
 helm-lint: deploy/.build-charts
 	helm lint deploy/.build-charts --set nextauth.secret=test
 	helm lint deploy/.build-charts \
@@ -27,16 +29,21 @@ helm-lint: deploy/.build-charts
 	  --set ingress.hostname=example.com \
 	  --set ingress.className=traefik
 
+.PHONY: replicated-lint
 replicated-lint: deploy/.build-charts
 	replicated release lint
 
+.PHONY: lint
 lint: helm-lint replicated-lint
 
+.PHONY: package-charts
 package-charts:
 	./deploy/scripts/package-charts.sh $(CHART_VERSION) $(IMAGE_TAG)
 
+.PHONY: dev-setup
 dev-setup:
 	./scripts/dev-setup.sh
 
+.PHONY: dev-run
 dev-run:
 	./scripts/dev-run.sh
