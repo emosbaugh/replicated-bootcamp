@@ -1,0 +1,51 @@
+name: Image Scan
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag to scan
+        required: true
+        type: string
+      fail-build:
+        description: Fail the workflow if vulnerabilities are found
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to scan
+        required: false
+        default: main
+        type: string
+      fail-build:
+        description: Fail the workflow if vulnerabilities are found
+        required: false
+        default: true
+        type: boolean
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: read
+    steps:
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Scan image with Grype
+        uses: anchore/scan-action@v6
+        with:
+          image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
+          fail-build: ${{ github.event_name == 'schedule' || inputs.fail-build }}
+          only-fixed: true
+          severity-cutoff: medium
+          output-format: table
