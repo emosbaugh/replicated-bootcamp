@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "$REPO_ROOT/deploy/versions.env"
 
 # Release artifacts (yamls + tgz) — consumed by `replicated release create`
-BUILD_DIR="$REPO_ROOT/deploy/build"
+BUILD_DIR="$REPO_ROOT/deploy/build/manifests"
 # Chart working copy with real versions and downloaded deps — consumed by `helm lint`
 CHARTS_DIR="$REPO_ROOT/deploy/build/charts"
 
