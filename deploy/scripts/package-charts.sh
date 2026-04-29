@@ -22,14 +22,6 @@ cp "$REPO_ROOT"/deploy/manifests/*.yaml "$BUILD_DIR/"
 # Copy chart source into charts working dir
 cp -r "$REPO_ROOT/deploy/charts/." "$CHARTS_DIR/"
 
-# Stamp Chart.yaml dependency versions
-yq -i "(.dependencies[] | select(.name == \"postgresql\") | .version) = \"${POSTGRESQL_CHART_VERSION}\"" \
-  "$CHARTS_DIR/Chart.yaml"
-yq -i "(.dependencies[] | select(.name == \"redis\") | .version) = \"${REDIS_CHART_VERSION}\"" \
-  "$CHARTS_DIR/Chart.yaml"
-yq -i "(.dependencies[] | select(.name == \"replicated\") | .version) = \"${REPLICATED_CHART_VERSION}\"" \
-  "$CHARTS_DIR/Chart.yaml"
-
 # Stamp embedded-cluster-config.yaml versions
 yq -i ".spec.version = \"${EMBEDDED_CLUSTER_VERSION}\"" \
   "$BUILD_DIR/embedded-cluster-config.yaml"
