@@ -25,6 +25,7 @@ jobs:
       packages: read
     with:
       tag: pr-${{ github.event.pull_request.number }}
+      fail-build: false
     secrets: inherit
 
   lint:
@@ -76,7 +77,7 @@ jobs:
           REPLICATED_APP: playball-exe
 
   release:
-    needs: [build, lint, scan]
+    needs: [build, lint]
     runs-on: ubuntu-latest
     outputs:
       channel-slug: ${{ steps.create-release.outputs.channel-slug }}

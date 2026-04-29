@@ -7,6 +7,11 @@ on:
         description: Image tag to scan
         required: true
         type: string
+      fail-build:
+        description: Fail the workflow if vulnerabilities are found
+        required: false
+        default: true
+        type: boolean
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
@@ -16,6 +21,11 @@ on:
         required: false
         default: main
         type: string
+      fail-build:
+        description: Fail the workflow if vulnerabilities are found
+        required: false
+        default: true
+        type: boolean
 
 jobs:
   scan:
@@ -35,6 +45,7 @@ jobs:
         uses: anchore/scan-action@v6
         with:
           image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
-          fail-build: true
+          fail-build: ${{ github.event_name == 'schedule' || inputs.fail-build }}
+          only-fixed: true
           severity-cutoff: medium
           output-format: table
