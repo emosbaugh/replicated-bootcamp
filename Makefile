@@ -16,13 +16,10 @@ docker-build:
 	  --build-arg SUPPORT_BUNDLE_VERSION=$(SUPPORT_BUNDLE_VERSION) \
 	  .
 
-deploy/.build-charts:
-	./deploy/scripts/package-charts.sh $(CHART_VERSION) $(IMAGE_TAG)
-
 .PHONY: helm-lint
-helm-lint: deploy/.build-charts
-	helm lint deploy/.build-charts --set nextauth.secret=test
-	helm lint deploy/.build-charts \
+helm-lint: package-charts
+	helm lint deploy/build/charts --set nextauth.secret=test
+	helm lint deploy/build/charts \
 	  --set nextauth.secret=test \
 	  --set nextauth.url=https://example.com \
 	  --set ingress.enabled=true \
@@ -30,7 +27,7 @@ helm-lint: deploy/.build-charts
 	  --set ingress.className=traefik
 
 .PHONY: replicated-lint
-replicated-lint: deploy/.build-charts
+replicated-lint: package-charts
 	replicated release lint
 
 .PHONY: lint

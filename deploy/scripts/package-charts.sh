@@ -11,7 +11,7 @@ source "$REPO_ROOT/deploy/versions.env"
 # Release artifacts (yamls + tgz) — consumed by `replicated release create`
 BUILD_DIR="$REPO_ROOT/deploy/build"
 # Chart working copy with real versions and downloaded deps — consumed by `helm lint`
-CHARTS_DIR="$REPO_ROOT/deploy/.build-charts"
+CHARTS_DIR="$REPO_ROOT/deploy/build/charts"
 
 rm -rf "$BUILD_DIR" "$CHARTS_DIR"
 mkdir -p "$BUILD_DIR" "$CHARTS_DIR"
