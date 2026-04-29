@@ -13,6 +13,6 @@ Run `npm test` before every `git commit`. Do not commit if any tests fail — fi
 Run all of the following before every `git push`. Do not push if any step fails — fix the failures first.
 
 ```
-docker build -f deploy/Dockerfile .
-helm lint deploy/charts --set nextauth.secret=test
+make docker-build
+make helm-lint
 ```
