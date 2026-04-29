@@ -84,3 +84,19 @@ Shared at the end of the exercise as structured developer experience feedback.
 **Actual:** Three undocumented behaviors compounded: (1) `containerName` is silently ignored for output file naming — the filename prefix comes from `collectorName`, not `containerName`. Without a `collectorName`, files land as `-stdout.txt`, `-stderr.txt`, `-errors.json` (empty prefix), and the `textAnalyze` glob never matches. (2) `localhost` resolves to `::1` (IPv6) in Alpine-based pods; since Next.js binds to IPv4 only, `wget localhost` gets connection refused — must use `127.0.0.1` explicitly. (3) The stdout file is named `{collectorName}-stdout.txt` (with `.txt` extension), not `{collectorName}-stdout` as the source-code format strings suggest.
 **Resolution:** Added `collectorName: app-healthz`, changed URL to `http://127.0.0.1:3000/api/healthz`, and updated the `textAnalyze` `fileName` glob to `app-healthz/*/*/app-healthz-stdout.txt`. Required three CI bundle iterations to discover each issue.
 **Severity:** blocker
+
+## Entry 11 — 2026-04-25 — annoyance
+
+**Trying to:** Complete the Enterprise Portal initial setup wizard by connecting GitHub and creating the content repo from the template
+**Expected:** After clicking "Create Repo from Template" and creating the repo on GitHub, the wizard would automatically detect the new repo and allow linking it — or at least prompt you to grant access
+**Actual:** After creating the repo from the template on GitHub, you are dropped back into the Vendor Portal wizard but the repo does not appear in the repository dropdown. You have to manually navigate to GitHub (Settings > Integrations > Applications > Replicated > Configure > Repository access) to grant the Replicated GitHub App access to the newly created repo before it appears. This extra step is not surfaced in the wizard UI and is only mentioned in a small "Tip" callout in the docs — easy to miss.
+**Resolution:** Found the workaround in the docs tip under "Step 1: Connect GitHub": update the GitHub App's repository permissions to include the new repo, then return to the wizard. The docs do mention this but the wizard gives no indication that this step is needed.
+**Severity:** annoyance
+
+## Entry 12 — 2026-04-26 — annoyance
+
+**Trying to:** Delete a branch from the Enterprise Portal content repo that was no longer needed
+**Expected:** Deleting the branch on GitHub would be a clean operation — the branch disappears from EP's version list and syncs stop referencing it
+**Actual:** After deleting the branch, every subsequent sync fails with a persistent error: `git clone failed: Cloning into '/tmp/ep-content-sync-...'... warning: Could not find remote branch <deleted-branch> to clone. fatal: Remote branch <deleted-branch> not found in upstream origin : exit status 128`. EP continues to attempt syncing the deleted branch on every push, and the error appears in the Content tab sync status permanently.
+**Resolution:** Unknown — no docs mention how to remove a stale branch reference from EP's sync state. The docs say "To unpublish a version from the dropdown, delete the branch" but do not mention that EP may retain a reference to it and continue failing to sync it.
+**Severity:** annoyance

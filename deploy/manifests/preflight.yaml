@@ -1,0 +1,26 @@
+apiVersion: troubleshoot.sh/v1beta3
+kind: Preflight
+metadata:
+  name: vendor-app-preflight
+spec:
+  collectors:
+    - clusterInfo: {}
+  analyzers:
+    - clusterVersion:
+        checkName: Kubernetes Version
+        outcomes:
+          - fail:
+              when: "< 1.30.0"
+              message: This application requires Kubernetes 1.30.0 or later.
+          - pass:
+              message: Kubernetes version is compatible.
+    {{- if .Values.client.enabled }}
+    - nodeResources:
+        checkName: Cluster Memory
+        outcomes:
+          - fail:
+              when: "sum(memoryCapacity) < 2Gi"
+              message: The cluster requires at least 2Gi of memory when the client is enabled.
+          - pass:
+              message: The cluster has sufficient memory.
+    {{- end }}

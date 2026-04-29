@@ -3,7 +3,7 @@ kind: Config
 metadata:
   name: playball-exe
 spec:
-  version: "3.0.0-alpha-31+k8s-1.34"
+  version: "3.0.0-beta.2+k8s-1.34"
   domains:
     proxyRegistryDomain: images.emosbaugh.be
   extensions:
@@ -16,20 +16,16 @@ spec:
         weight: 10
         values:
           image:
-            registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-            repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-controller" }}'
+            repository: '{{repl ReplicatedImageName (HelmValue ".image.repository") }}'
           cainjector:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-cainjector" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".cainjector.image.repository") }}'
           webhook:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-webhook" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".webhook.image.repository") }}'
           startupapicheck:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
-              repository: '{{repl ReplicatedImageRepository "quay.io/jetstack/cert-manager-startupapicheck" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".startupapicheck.image.repository") }}'
           crds:
             enabled: true
       - chart:
@@ -39,8 +35,7 @@ spec:
         namespace: traefik
         values:
           image:
-            registry: '{{repl ReplicatedImageRegistry "docker.io" }}'
-            repository: '{{repl ReplicatedImageRepository "docker.io/library/traefik" }}'
+            registry: '{{repl ReplicatedImageRegistry (HelmValue ".image.registry") }}'
           service:
             type: NodePort
           ports:

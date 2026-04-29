@@ -179,8 +179,8 @@ jobs:
             -o ServerAliveInterval=30 \
             -o ServerAliveCountMax=60 \
             "ci@$SSH_HOST" \
-            "curl -f 'https://replicated.app/embedded/playball-exe/${CHANNEL}/${VERSION}?airgap=true' \
-               -H 'Authorization: ${LICENSE_ID}' -o playball-exe.tgz && \
+            "curl --fail-with-body 'https://replicated.app/embedded/playball-exe/${CHANNEL}/${VERSION}?airgap=true' \
+               -H 'Authorization: ${LICENSE_ID}' -o playball-exe.tgz || { cat playball-exe.tgz; exit 1; } && \
              tar xzf playball-exe.tgz"
 
       - name: Enable airgap network policy
