@@ -3,7 +3,12 @@ include deploy/versions.env
 CHART_VERSION ?= 0.1.0-dev
 IMAGE_TAG ?= main
 
-.PHONY: docker-build helm-lint replicated-lint lint package-charts dev-setup dev-run
+.PHONY: all test docker-build helm-lint replicated-lint lint package-charts dev-setup dev-run
+
+all: test lint
+
+test:
+	npm test
 
 docker-build:
 	docker build -f deploy/Dockerfile \

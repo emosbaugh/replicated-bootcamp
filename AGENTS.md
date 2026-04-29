@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Before Every Commit
 
-Run `npm test` before every `git commit`. Do not commit if any tests fail — fix the failures first.
+Run `make test` before every `git commit`. Do not commit if any tests fail — fix the failures first.
 
 # Before Every Push
 
@@ -14,5 +14,5 @@ Run all of the following before every `git push`. Do not push if any step fails 
 
 ```
 make docker-build
-make helm-lint
+make lint
 ```
