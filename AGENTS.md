@@ -6,7 +6,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Before Every Commit
 
-Run `make test` before every `git commit`. Do not commit if any tests fail — fix the failures first.
+Run `make all` before every `git commit`. Do not commit if any step fails — fix the failures first.
 
 # Before Every Push
 
