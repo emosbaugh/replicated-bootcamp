@@ -16,16 +16,16 @@ spec:
         weight: 10
         values:
           image:
-            registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
+            repository: '{{repl ReplicatedImageName (HelmValue ".image.repository") }}'
           cainjector:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".cainjector.image.repository") }}'
           webhook:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".webhook.image.repository") }}'
           startupapicheck:
             image:
-              registry: '{{repl ReplicatedImageRegistry "quay.io" }}'
+              repository: '{{repl ReplicatedImageName (HelmValue ".cainjector.image.repository") }}'
           crds:
             enabled: true
       - chart:
@@ -35,7 +35,7 @@ spec:
         namespace: traefik
         values:
           image:
-            registry: '{{repl ReplicatedImageRegistry "docker.io" }}'
+            registry: '{{repl ReplicatedImageRegistry (HelmValue ".image.registry") }}'
           service:
             type: NodePort
           ports:
