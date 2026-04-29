@@ -42,7 +42,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Scan image with Grype
-        uses: anchore/scan-action@v6
+        uses: anchore/scan-action@v7
         with:
           image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
           fail-build: ${{ github.event_name == 'schedule' || inputs.fail-build }}
