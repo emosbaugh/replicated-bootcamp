@@ -20,6 +20,7 @@ on:
 jobs:
   scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       packages: read
     steps:
@@ -33,7 +34,7 @@ jobs:
       - name: Scan image with Grype
         uses: anchore/scan-action@v6
         with:
-          image: ghcr.io/replemos/playball.exe:${{ inputs.tag || 'main' }}
+          image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
           fail-build: true
           severity-cutoff: medium
           output-format: table
