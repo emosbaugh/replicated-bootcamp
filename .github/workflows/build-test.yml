@@ -99,7 +99,7 @@ jobs:
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          yaml-dir: deploy/.build
+          yaml-dir: deploy/build
           promote-channel: pr-${{ github.event.pull_request.number }}
           version: ${{ steps.set-version.outputs.version }}
 

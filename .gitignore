@@ -50,5 +50,5 @@ next-env.d.ts
 .ssh/
 test-results/
 deploy/charts/**/*.tgz
-deploy/.build/
+deploy/build/
 deploy/.build-charts/

@@ -7,7 +7,7 @@ charts: [
   },
 ]
 manifests:
-  - "./deploy/.build/*"
+  - "./deploy/build/*"
 repl-lint:
   version: 1
   linters:

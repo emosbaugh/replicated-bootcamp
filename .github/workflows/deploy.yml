@@ -65,6 +65,6 @@ jobs:
         with:
           app-slug: playball-exe
           api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          yaml-dir: deploy/.build
+          yaml-dir: deploy/build
           promote-channel: ${{ steps.vars.outputs.channel }}
           version: ${{ steps.vars.outputs.version }}
