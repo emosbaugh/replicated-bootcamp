@@ -41,6 +41,9 @@ yq -i "(.spec.extensions.helmCharts[] | select(.chart.name == \"traefik\") | .ch
 # Stamp helmchart.yaml with the release chart version
 yq -i ".spec.chart.chartVersion = \"${CHART_VERSION}\"" "$BUILD_DIR/helmchart.yaml"
 
+# Stamp Chart.yaml version to match so validators see consistent versions
+yq -i ".version = \"${CHART_VERSION}\"" "$CHARTS_DIR/Chart.yaml"
+
 # Stamp image tag into chart values if provided
 if [[ -n "$IMAGE_TAG" ]]; then
   yq -i ".image.tag = \"${IMAGE_TAG}\"" "$CHARTS_DIR/values.yaml"
