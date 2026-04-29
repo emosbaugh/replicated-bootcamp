@@ -16,7 +16,7 @@ spec:
   values:
     image:
       registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
-      repository: 'repl{{ ReplicatedImageRepository "docker.io/replemosteam/playball.exe" }}'
+      repository: 'repl{{ ReplicatedImageRepository "ghcr.io/replemos/playball.exe" }}'
     replicated:
       image:
         registry: 'repl{{ ReplicatedImageRegistry "images.emosbaugh.be" }}'
