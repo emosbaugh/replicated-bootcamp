@@ -18,7 +18,7 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
 
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,15 +32,10 @@ jobs:
 
       - run: npm test
 
-      - name: Helm lint
-        run: |
-          helm lint deploy/charts --set nextauth.secret=test
-          helm lint deploy/charts \
-            --set nextauth.secret=test \
-            --set nextauth.url=https://example.com \
-            --set ingress.enabled=true \
-            --set ingress.hostname=example.com \
-            --set ingress.className=traefik
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
 
       - name: Install Replicated CLI
         run: |
@@ -51,17 +46,17 @@ jobs:
           tar xf replicated.tar.gz replicated && rm replicated.tar.gz
           sudo mv replicated /usr/local/bin/replicated
 
-      - name: Package Helm chart
-        run: make package-charts CHART_VERSION=0.1.0
+      - name: Helm lint
+        run: make helm-lint
 
       - name: Replicated release lint
-        run: replicated release lint --yaml-dir deploy/.build
+        run: make replicated-lint
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
           REPLICATED_APP: playball-exe
 
   release:
-    needs: [build, lint]
+    needs: [build, test, lint]
     runs-on: ubuntu-latest
     outputs:
       channel-slug: ${{ steps.create-release.outputs.channel-slug }}

@@ -3,7 +3,7 @@ include deploy/versions.env
 CHART_VERSION ?= 0.1.0-dev
 IMAGE_TAG ?= main
 
-.PHONY: docker-build helm-lint package-charts dev-setup dev-run
+.PHONY: docker-build helm-lint replicated-lint lint package-charts dev-setup dev-run
 
 docker-build:
 	docker build -f deploy/Dockerfile \
@@ -21,6 +21,11 @@ helm-lint: deploy/.build-charts
 	  --set ingress.enabled=true \
 	  --set ingress.hostname=example.com \
 	  --set ingress.className=traefik
+
+replicated-lint:
+	replicated release lint
+
+lint: helm-lint replicated-lint
 
 package-charts:
 	./deploy/scripts/package-charts.sh $(CHART_VERSION) $(IMAGE_TAG)
