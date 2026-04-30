@@ -65,10 +65,12 @@ jobs:
         run: |
           CHANNEL=$(replicated channel ls --output json \
             | jq --arg name "${{ inputs.channel }}" '.[] | select(.name == $name)')
+          APP_ID=$(replicated api get /v3/apps \
+            | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
           echo "slug=$(echo "$CHANNEL"    | jq -r '.channelSlug')"     >> $GITHUB_OUTPUT
           echo "id=$(echo "$CHANNEL"      | jq -r '.id')"              >> $GITHUB_OUTPUT
           echo "sequence=$(echo "$CHANNEL" | jq -r '.channelSequence')" >> $GITHUB_OUTPUT
-          echo "app-id=$(echo "$CHANNEL"  | jq -r '.appId')"           >> $GITHUB_OUTPUT
+          echo "app-id=${APP_ID}"                                       >> $GITHUB_OUTPUT
 
       - name: Trigger airgap bundle build
         env:
