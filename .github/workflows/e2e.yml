@@ -76,6 +76,7 @@ jobs:
 
       - name: Run preflight checks
         run: |
+          helm dependency update deploy/charts
           helm package deploy/charts -d /tmp --version "${{ inputs.version }}"
           helm template /tmp/playball-exe-${{ inputs.version }}.tgz \
             --set nextauth.secret=test \
