@@ -3,7 +3,7 @@ kind: Config
 metadata:
   name: playball-exe
 spec:
-  version: "3.0.0-beta.2+k8s-1.34"
+  version: "3.0.0-beta.4+k8s-1.34"
   domains:
     proxyRegistryDomain: images.emosbaugh.be
   extensions:
@@ -36,7 +36,6 @@ spec:
         values:
           image:
             registry: '{{repl ReplicatedImageRegistry (HelmValue ".image.registry") }}'
-            repository: library/traefik
           service:
             type: NodePort
           ports:
