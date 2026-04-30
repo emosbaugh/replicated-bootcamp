@@ -253,7 +253,7 @@ jobs:
 
       - name: Upload support bundle (ec3-airgap)
         if: always() && steps.collect-support-bundle.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: support-bundle-ec3-airgap-pr-${{ inputs.pr-number }}-${{ github.run_number }}
           path: support-bundle.tar.gz
