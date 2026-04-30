@@ -2,17 +2,15 @@ apiVersion: embeddedcluster.replicated.com/v1beta1
 kind: Config
 metadata:
   name: playball-exe
-# Versions below are overridden at build time from deploy/versions.env.
-# Do not edit these manually — update versions.env instead.
 spec:
-  version: "0.0.0"
+  version: "3.0.0-beta.2+k8s-1.34"
   domains:
     proxyRegistryDomain: images.emosbaugh.be
   extensions:
     helmCharts:
       - chart:
           name: cert-manager
-          chartVersion: "0.0.0"
+          chartVersion: "v1.17.2"
         releaseName: cert-manager
         namespace: cert-manager
         weight: 10
@@ -32,7 +30,7 @@ spec:
             enabled: true
       - chart:
           name: traefik
-          chartVersion: "0.0.0"
+          chartVersion: "39.0.7"
         releaseName: traefik
         namespace: traefik
         values:
