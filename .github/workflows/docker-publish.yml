@@ -25,9 +25,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Load versions
-        run: cat deploy/versions.env >> $GITHUB_ENV
-
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
@@ -46,8 +43,6 @@ jobs:
           file: deploy/Dockerfile
           push: true
           tags: ghcr.io/replemos/playball.exe:${{ inputs.tag }}
-          build-args: |
-            SUPPORT_BUNDLE_VERSION=${{ env.SUPPORT_BUNDLE_VERSION }}
 
       - name: Sign image
         run: cosign sign --yes ghcr.io/replemos/playball.exe@${{ steps.build.outputs.digest }}

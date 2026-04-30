@@ -4,9 +4,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^deploy/versions\\.env$"],
+      "fileMatch": ["^deploy/Dockerfile$"],
       "matchStrings": [
-        "SUPPORT_BUNDLE_VERSION=(?<currentValue>[^\\s]+)"
+        "ARG SUPPORT_BUNDLE_VERSION=(?<currentValue>[^\\s]+)"
       ],
       "depNameTemplate": "replicatedhq/troubleshoot",
       "datasourceTemplate": "github-releases"

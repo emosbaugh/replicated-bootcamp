@@ -1,5 +1,3 @@
-include deploy/versions.env
-
 .PHONY: all
 all: test lint
 
@@ -9,9 +7,7 @@ test:
 
 .PHONY: docker-build
 docker-build:
-	docker build -f deploy/Dockerfile \
-	  --build-arg SUPPORT_BUNDLE_VERSION=$(SUPPORT_BUNDLE_VERSION) \
-	  .
+	docker build -f deploy/Dockerfile .
 
 .PHONY: helm-dep-update
 helm-dep-update:
