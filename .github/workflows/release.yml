@@ -50,9 +50,7 @@ jobs:
           REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
         run: |
           replicated release create --version "${{ inputs.version }}" --promote "${{ inputs.channel }}"
-          APP_ID=$(replicated api get /v3/apps | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
-          CHANNEL_SLUG=$(replicated api get "/v3/app/${APP_ID}/channels" \
-            | jq -r --arg name "${{ inputs.channel }}" '.channels[] | select(.channelName == $name) | .channelSlug')
+          CHANNEL_SLUG=$(echo "${{ inputs.channel }}" | tr '[:upper:]' '[:lower:]' | tr ' ' '-')
           echo "channel-slug=${CHANNEL_SLUG}" >> $GITHUB_OUTPUT
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
