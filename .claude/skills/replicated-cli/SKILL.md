@@ -5,21 +5,17 @@ description: Use when running Replicated CLI commands to manage apps, channels, 
 
 # Replicated CLI
 
-## Authentication
+## Prerequisites
 
-Pass `--token $REPLICATED_API_TOKEN` to every command, or configure a profile. The env var does **not** auto-load — pass it explicitly.
+- `replicated` CLI installed and authenticated
+- `REPLICATED_API_TOKEN` set in environment (required for CLI auth)
 
 The `.replicated` config in the repo root sets `appSlug` and `manifests`/`charts` paths, so `release create` and `release lint` do **not** need `--app` or `--yaml-dir`. Other commands (channel, customer, registry) still require `--app`.
-
-```bash
-replicated <command> --token $REPLICATED_API_TOKEN --app <app-slug>
-```
 
 Global flags available on all commands:
 
 | Flag | Description |
 |------|-------------|
-| `--token string` | Vendor API token |
 | `--app string` | App slug or ID |
 | `--profile string` | Named auth profile |
 | `--debug` | Debug output |
@@ -27,18 +23,18 @@ Global flags available on all commands:
 ## App
 
 ```bash
-replicated app ls --token $REPLICATED_API_TOKEN
-replicated app create --name "My App" --token $REPLICATED_API_TOKEN
+replicated app ls
+replicated app create --name "My App"
 ```
 
 ## Channel
 
 ```bash
 # List channels
-replicated channel ls --token $REPLICATED_API_TOKEN --app <slug>
+replicated channel ls --app <slug>
 
 # Inspect a channel (get channel ID, current release, etc.)
-replicated channel inspect <channel-id> --token $REPLICATED_API_TOKEN --app <slug>
+replicated channel inspect <channel-id> --app <slug>
 ```
 
 ## Release
@@ -54,13 +50,13 @@ make bundle-extensions
 
 # 3. Create and promote the release
 #    No --yaml-dir or --app needed: .replicated config provides both.
-replicated release create --version "$RELEASE_VERSION" --promote Unstable --token $REPLICATED_API_TOKEN
+replicated release create --version "$RELEASE_VERSION" --promote Unstable
 
 # Promote an existing release sequence to a channel
-replicated release promote <sequence> <channel-id> --version 1.0.0 --token $REPLICATED_API_TOKEN --app <slug>
+replicated release promote <sequence> <channel-id> --version 1.0.0 --app <slug>
 
 # List releases
-replicated release ls --token $REPLICATED_API_TOKEN --app <slug>
+replicated release ls --app <slug>
 ```
 
 `release create` key flags:
@@ -79,13 +75,13 @@ replicated release ls --token $REPLICATED_API_TOKEN --app <slug>
 ```bash
 # Create a customer
 replicated customer create --name "Acme Inc" --channel stable --type trial --expires-in 720h \
-  --token $REPLICATED_API_TOKEN --app <slug>
+  --app <slug>
 
 # List customers
-replicated customer ls --token $REPLICATED_API_TOKEN --app <slug>
+replicated customer ls --app <slug>
 
 # Download a license file
-replicated customer download-license --customer <id> --token $REPLICATED_API_TOKEN --app <slug>
+replicated customer download-license --customer <id> --app <slug>
 ```
 
 License types: `dev`, `trial`, `paid`, `community`, `test`
@@ -95,7 +91,7 @@ Feature flags: `--airgap`, `--snapshot`, `--helm-install`, `--kots-install`, `--
 ## Registry
 
 ```bash
-replicated registry ls --token $REPLICATED_API_TOKEN --app <slug>
+replicated registry ls --app <slug>
 ```
 
 ## Ad-hoc Vendor API Calls
@@ -104,14 +100,14 @@ Use `replicated api` to call any Vendor API endpoint directly:
 
 ```bash
 # GET
-replicated api get /v3/apps --token $REPLICATED_API_TOKEN
+replicated api get /v3/apps
 
 # POST — create an app
-replicated api post /v3/app --token $REPLICATED_API_TOKEN \
+replicated api post /v3/app \
   --body '{"name":"My App"}'
 
 # PATCH / PUT
-replicated api patch /v3/app/<app-id> --token $REPLICATED_API_TOKEN \
+replicated api patch /v3/app/<app-id> \
   --body '{"name":"New Name"}'
 ```
 
@@ -131,7 +127,7 @@ Common endpoints:
 ## Common Mistakes
 
 - **EC releases require bundled extension charts**: run `make package-charts` then `make bundle-extensions` before `release create`. `bundle-extensions` pulls cert-manager and traefik archives into `deploy/manifests/` so EC3 can find them at install time. See `docs/testing-ec3.md` for the full workflow. Without these, the install fails with "no chart archive found for ...".
-- Forgetting `--token` — the CLI will fail with an auth error; always pass it explicitly
+- `REPLICATED_API_TOKEN` not exported — the CLI will fail with an auth error; ensure it is set in the environment before running any command
 - Using `--yaml` instead of `--yaml-dir` for multi-file manifests
 - Passing a channel name to `release promote` — it requires the channel **ID**, not name (use `channel ls` to find it)
 - **Semver-enabled channels**: If a channel has semver enabled, promoting a release with a version lower than the channel's current version will silently do nothing (the CLI reports success but the channel doesn't update). Always run `channel inspect <id>` first to check the current version, then use a version string that is strictly greater. Example: if current is `2026.99.2-foo`, use `2026.99.3` or higher.

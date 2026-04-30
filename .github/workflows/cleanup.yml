@@ -8,6 +8,8 @@ on:
 jobs:
   cleanup:
     runs-on: ubuntu-latest
+    env:
+      REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
     steps:
       - name: Install Replicated CLI
         run: |
@@ -22,7 +24,6 @@ jobs:
         id: app
         run: |
           APP_ID=$(replicated api get /v3/apps \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
             | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
           echo "id=$APP_ID" >> $GITHUB_OUTPUT
 
@@ -31,17 +32,14 @@ jobs:
           CUTOFF=$(date -d '7 days ago' +%s)
           APP_ID="${{ steps.app.outputs.id }}"
           replicated api get /v3/app/${APP_ID}/customers \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
             | jq -r '.customers[] | select(.name | startswith("ci-")) | .id' \
             | while read -r customer_id; do
                 CREATED=$(replicated api get /v3/app/${APP_ID}/customer/${customer_id} \
-                  --token ${{ secrets.REPLICATED_API_TOKEN }} \
                   | jq -r '.customer.createdAt')
                 CREATED_TS=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
                 if [ "$CREATED_TS" -lt "$CUTOFF" ]; then
                   echo "Archiving customer $customer_id (created $CREATED)"
                   replicated api put /v3/app/${APP_ID}/customer/${customer_id}/archive \
-                    --token ${{ secrets.REPLICATED_API_TOKEN }} \
                     --body '{}' || echo "Failed to archive customer $customer_id, skipping"
                 fi
               done
@@ -51,17 +49,14 @@ jobs:
           CUTOFF=$(date -d '7 days ago' +%s)
           APP_ID="${{ steps.app.outputs.id }}"
           replicated api get /v3/app/${APP_ID}/channels \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
             | jq -r '.channels[] | select(.name | startswith("pr-")) | .id' \
             | while read -r channel_id; do
                 CREATED=$(replicated api get /v3/app/${APP_ID}/channel/${channel_id} \
-                  --token ${{ secrets.REPLICATED_API_TOKEN }} \
                   | jq -r '.channel.created')
                 CREATED_TS=$(date -d "$CREATED" +%s 2>/dev/null || echo 0)
                 if [ "$CREATED_TS" -lt "$CUTOFF" ]; then
                   echo "Archiving channel $channel_id (created $CREATED)"
                   replicated api put /v3/app/${APP_ID}/channel/${channel_id}/archive \
-                    --token ${{ secrets.REPLICATED_API_TOKEN }} \
                     --body '{}' || echo "Failed to archive channel $channel_id, skipping"
                 fi
               done

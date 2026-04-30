@@ -39,7 +39,7 @@ make bundle-extensions
 replicated release create \
   --version "$RELEASE_VERSION" \
   --promote Unstable \
-  --token $REPLICATED_API_TOKEN
+ 
 ```
 
 Note the channel slug (e.g. `unstable`) and release version from the output.
@@ -52,7 +52,7 @@ replicated customer create \
   --channel Unstable \
   --type dev \
   --embedded-cluster-download \
-  --token $REPLICATED_API_TOKEN \
+  \
   --app playball-exe
 ```
 
@@ -64,7 +64,7 @@ the customer ID):
 LICENSE_ID=$(replicated customer download-license \
   --customer <customer-id> \
   --app playball-exe \
-  --token $REPLICATED_API_TOKEN \
+  \
   | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
 echo "License ID: $LICENSE_ID"
 ```
@@ -77,13 +77,13 @@ replicated vm create \
   --version 24.04 \
   --ttl 2h \
   --ssh-public-key .ssh/id_ed25519.pub \
-  --token $REPLICATED_API_TOKEN
+ 
 ```
 
 Wait for `STATUS` to show `running`:
 
 ```bash
-replicated vm ls --token $REPLICATED_API_TOKEN
+replicated vm ls
 ```
 
 Note the VM ID.
@@ -118,7 +118,7 @@ EOF
 
 ```bash
 USERNAME=$(cut -d' ' -f3 .ssh/id_ed25519.pub | cut -d'@' -f1)
-SCP_ENDPOINT=$(replicated vm scp-endpoint <vm-id> --username "$USERNAME" --token $REPLICATED_API_TOKEN)
+SCP_ENDPOINT=$(replicated vm scp-endpoint <vm-id> --username "$USERNAME")
 SCP_HOST=$(echo "$SCP_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
 SCP_PORT=$(echo "$SCP_ENDPOINT" | cut -d: -f3)
 
@@ -133,7 +133,7 @@ scp -i .ssh/id_ed25519 \
 ## SSH and Install
 
 ```bash
-SSH_ENDPOINT=$(replicated vm ssh-endpoint <vm-id> --username "$USERNAME" --token $REPLICATED_API_TOKEN)
+SSH_ENDPOINT=$(replicated vm ssh-endpoint <vm-id> --username "$USERNAME")
 SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
 SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
 
@@ -180,7 +180,7 @@ sudo ./playball-exe upgrade \
 After install completes, expose port 30080:
 
 ```bash
-replicated vm port expose <vm-id> --port 30080 --protocol http,https --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 30080 --protocol http,https
 ```
 
 The command returns a public URL. Open it in a browser to access the Admin Console.
@@ -190,7 +190,7 @@ The command returns a public URL. Open it in a browser to access the Admin Conso
 Traefik listens on port 80. Expose it and open the hostname you configured:
 
 ```bash
-replicated vm port expose <vm-id> --port 80 --protocol http --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 80 --protocol http
 ```
 
 The app will be accessible at `http://<hostname>` (where `<hostname>` is the value you set in config-values.yaml).
@@ -200,7 +200,7 @@ The app will be accessible at `http://<hostname>` (where `<hostname>` is the val
 Traefik also listens on port 443 with a self-signed certificate. Expose it:
 
 ```bash
-replicated vm port expose <vm-id> --port 443 --protocol https --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 443 --protocol https
 ```
 
 The app is accessible at the HTTPS URL. Your browser will show a certificate warning for the self-signed cert — proceed past it. HTTP traffic on port 80 redirects automatically to HTTPS.
@@ -219,6 +219,6 @@ sudo /var/lib/playball-exe/bin/kubectl get ingress -A
 Always delete the VM and archive the customer when done:
 
 ```bash
-replicated vm rm <vm-id> --token $REPLICATED_API_TOKEN
-replicated customer archive <customer-id> --token $REPLICATED_API_TOKEN --app playball-exe
+replicated vm rm <vm-id>
+replicated customer archive <customer-id> --app playball-exe
 ```

@@ -43,6 +43,8 @@ jobs:
   e2e-ec3-airgap:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
@@ -65,14 +67,12 @@ jobs:
             --airgap \
             --embedded-cluster-download \
             --app playball-exe \
-            --output json \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+            --output json)
           CUSTOMER_ID=$(echo "$CUSTOMER_JSON" | jq -r '.id')
           echo "customer-id=$CUSTOMER_ID" >> $GITHUB_OUTPUT
           LICENSE_ID=$(replicated customer download-license \
             --customer "$CUSTOMER_ID" \
             --app playball-exe \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
             | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
           echo "license-id=$LICENSE_ID" >> $GITHUB_OUTPUT
 
@@ -93,7 +93,6 @@ jobs:
             --instance-type r1.large \
             --ttl 1h \
             --ssh-public-key .ssh/id_ed25519.pub \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
             --output json)
           VM_ID=$(echo "$VM_JSON" | jq -r '.[0].id')
           NETWORK_ID=$(echo "$VM_JSON" | jq -r '.[0].network_id')
@@ -106,7 +105,6 @@ jobs:
           for i in $(seq 1 60); do
             STATUS=$(replicated vm ls \
               --output json \
-              --token ${{ secrets.REPLICATED_API_TOKEN }} \
               | jq -r --arg id "$VM_ID" '.[] | select(.id == $id) | .status')
             echo "VM status: $STATUS"
             [ "$STATUS" = "running" ] && break
@@ -132,9 +130,7 @@ jobs:
       - name: SCP config-values.yaml to VM
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          SCP_ENDPOINT=$(replicated vm scp-endpoint "$VM_ID" \
-            --username ci \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SCP_ENDPOINT=$(replicated vm scp-endpoint "$VM_ID" --username ci)
           SCP_HOST=$(echo "$SCP_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
           SCP_PORT=$(echo "$SCP_ENDPOINT" | cut -d: -f3)
           scp -i .ssh/id_ed25519 \
@@ -167,9 +163,7 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
-            --username ci \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" --username ci)
           SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
           SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
           ssh -i .ssh/id_ed25519 \
@@ -186,15 +180,12 @@ jobs:
       - name: Enable airgap network policy
         run: |
           replicated network update "${{ steps.create-vm.outputs.network-id }}" \
-            --policy airgap \
-            --token ${{ secrets.REPLICATED_API_TOKEN }}
+            --policy airgap
 
       - name: Install EC v3 in airgap mode
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
-            --username ci \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" --username ci)
           SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
           SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
           ssh -i .ssh/id_ed25519 \
@@ -215,9 +206,7 @@ jobs:
       - name: Validate HTTPS
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
-            --username ci \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" --username ci)
           SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
           SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
           ssh -i .ssh/id_ed25519 \
@@ -246,9 +235,7 @@ jobs:
         continue-on-error: true
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
-          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" \
-            --username ci \
-            --token ${{ secrets.REPLICATED_API_TOKEN }})
+          SSH_ENDPOINT=$(replicated vm ssh-endpoint "$VM_ID" --username ci)
           SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
           SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
           ssh -i .ssh/id_ed25519 \
@@ -281,6 +268,4 @@ jobs:
 
       - name: Delete VM
         if: always() && steps.create-vm.outcome != 'skipped'
-        run: |
-          replicated vm rm "${{ steps.create-vm.outputs.vm-id }}" \
-            --token ${{ secrets.REPLICATED_API_TOKEN }}
+        run: replicated vm rm "${{ steps.create-vm.outputs.vm-id }}"
