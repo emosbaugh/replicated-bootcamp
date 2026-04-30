@@ -39,9 +39,9 @@ IMAGE_TAG ?= main
 
 .PHONY: package-charts
 package-charts:
-	yq -i ".version = \"$(VERSION)\"" deploy/charts/Chart.yaml
-	yq -i ".spec.chart.chartVersion = \"$(VERSION)\"" deploy/manifests/helmchart.yaml
-	yq -i ".image.tag = \"$(IMAGE_TAG)\"" deploy/charts/values.yaml
+	perl -i -pe 's/^version: .*/version: $(VERSION)/' deploy/charts/Chart.yaml
+	perl -i -pe 's/^    chartVersion: .*/    chartVersion: $(VERSION)/' deploy/manifests/helmchart.yaml
+	perl -i -pe 's/^  tag: .*/  tag: $(IMAGE_TAG)/' deploy/charts/values.yaml
 
 .PHONY: dev-setup
 dev-setup:
