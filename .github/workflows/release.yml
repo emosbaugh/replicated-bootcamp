@@ -60,8 +60,9 @@ jobs:
         id: channel
         env:
           REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
+          REPLICATED_APP: playball-exe
         run: |
-          CHANNEL=$(replicated channel ls --app playball-exe --output json \
+          CHANNEL=$(replicated channel ls --output json \
             | jq --arg name "${{ inputs.channel }}" '.[] | select(.name == $name)')
           echo "slug=$(echo "$CHANNEL"    | jq -r '.channelSlug')"     >> $GITHUB_OUTPUT
           echo "id=$(echo "$CHANNEL"      | jq -r '.id')"              >> $GITHUB_OUTPUT
