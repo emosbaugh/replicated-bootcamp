@@ -36,6 +36,7 @@ spec:
         values:
           image:
             registry: '{{repl ReplicatedImageRegistry (HelmValue ".image.registry") }}'
+            repository: library/traefik
           service:
             type: NodePort
           ports:
