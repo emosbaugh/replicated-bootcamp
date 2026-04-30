@@ -4,6 +4,15 @@
   "customManagers": [
     {
       "customType": "regex",
+      "fileMatch": ["^deploy/versions\\.env$"],
+      "matchStrings": [
+        "SUPPORT_BUNDLE_VERSION=(?<currentValue>[^\\s]+)"
+      ],
+      "depNameTemplate": "replicatedhq/troubleshoot",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
       "fileMatch": ["^deploy/manifests/embedded-cluster-config\\.yaml$"],
       "matchStrings": [
         "name: cert-manager\\s+chartVersion: \"(?<currentValue>[^\"]+)\""
