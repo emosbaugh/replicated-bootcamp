@@ -25,20 +25,17 @@ Both the private and public key are gitignored — generate a new one each sessi
 Package the chart and create a Replicated release:
 
 ```bash
-CHART_VERSION="0.1.0"
-RELEASE_VERSION="${CHART_VERSION}-ec3-test"
+RELEASE_VERSION="0.1.0-ec3-test"
 PR_NUMBER="<your-pr-number>"  # e.g. 46 — used to select the right Docker image tag
 
-# Builds deploy/.build/ with all chart archives and stamped manifests.
+# Stamps versions into deploy/charts/Chart.yaml and deploy/manifests/helmchart.yaml.
 # IMAGE_TAG selects the branch Docker image built by CI (the default `main` tag won't have your branch's code).
-make package-charts CHART_VERSION="$CHART_VERSION" IMAGE_TAG="pr-${PR_NUMBER}"
+make package-charts VERSION="$RELEASE_VERSION" IMAGE_TAG="pr-${PR_NUMBER}"
 
 replicated release create \
-  --yaml-dir deploy/.build \
   --version "$RELEASE_VERSION" \
   --promote Unstable \
-  --token $REPLICATED_API_TOKEN \
-  --app playball-exe
+  --token $REPLICATED_API_TOKEN
 ```
 
 Note the channel slug (e.g. `unstable`) and release version from the output.

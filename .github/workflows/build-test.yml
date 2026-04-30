@@ -63,7 +63,6 @@ jobs:
         run: make replicated-lint
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-          REPLICATED_APP: playball-exe
 
   release:
     needs: [build, scan, test, lint]
@@ -87,17 +86,16 @@ jobs:
           tar xf replicated.tar.gz replicated && rm replicated.tar.gz
           sudo mv replicated /usr/local/bin/replicated
 
+      - name: Package charts
+        run: make package-charts VERSION="${{ steps.set-version.outputs.version }}" IMAGE_TAG="pr-${{ github.event.pull_request.number }}"
+
       - name: Create and promote Replicated release
         id: create-release
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-          REPLICATED_APP: playball-exe
         run: |
           VERSION="${{ steps.set-version.outputs.version }}"
           CHANNEL="pr-${{ github.event.pull_request.number }}"
-          yq -i ".version = \"${VERSION}\"" deploy/charts/Chart.yaml
-          yq -i ".spec.chart.chartVersion = \"${VERSION}\"" deploy/manifests/helmchart.yaml
-          yq -i ".image.tag = \"pr-${{ github.event.pull_request.number }}\"" deploy/charts/values.yaml
           replicated release create --version "${VERSION}" --promote "${CHANNEL}"
           APP_ID=$(replicated api get /v3/apps | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
           CHANNEL_SLUG=$(replicated api get "/v3/app/${APP_ID}/channels" \

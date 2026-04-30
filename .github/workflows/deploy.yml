@@ -63,13 +63,10 @@ jobs:
           tar xf replicated.tar.gz replicated && rm replicated.tar.gz
           sudo mv replicated /usr/local/bin/replicated
 
+      - name: Package charts
+        run: make package-charts VERSION="${{ steps.vars.outputs.version }}" IMAGE_TAG="${{ steps.vars.outputs.image-tag }}"
+
       - name: Create and promote Replicated release
         env:
           REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-          REPLICATED_APP: playball-exe
-        run: |
-          VERSION="${{ steps.vars.outputs.version }}"
-          yq -i ".version = \"${VERSION}\"" deploy/charts/Chart.yaml
-          yq -i ".spec.chart.chartVersion = \"${VERSION}\"" deploy/manifests/helmchart.yaml
-          yq -i ".image.tag = \"${{ steps.vars.outputs.image-tag }}\"" deploy/charts/values.yaml
-          replicated release create --version "${VERSION}" --promote "${{ steps.vars.outputs.channel }}"
+        run: replicated release create --version "${{ steps.vars.outputs.version }}" --promote "${{ steps.vars.outputs.channel }}"

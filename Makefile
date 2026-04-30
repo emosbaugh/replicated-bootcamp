@@ -34,6 +34,12 @@ replicated-lint: helm-dep-update
 .PHONY: lint
 lint: helm-lint replicated-lint
 
+.PHONY: package-charts
+package-charts:
+	yq -i ".version = \"$(VERSION)\"" deploy/charts/Chart.yaml
+	yq -i ".spec.chart.chartVersion = \"$(VERSION)\"" deploy/manifests/helmchart.yaml
+	if [ -n "$(IMAGE_TAG)" ]; then yq -i ".image.tag = \"$(IMAGE_TAG)\"" deploy/charts/values.yaml; fi
+
 .PHONY: dev-setup
 dev-setup:
 	./scripts/dev-setup.sh
