@@ -27,7 +27,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     outputs:
-      channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+      channel-slug: ${{ steps.channel.outputs.slug }}
       version: ${{ steps.create-release.outputs.version }}
     steps:
       - uses: actions/checkout@v4
@@ -54,20 +54,23 @@ jobs:
         run: |
           # release create reads .replicated config and automatically runs helm dependency update + helm package
           replicated release create --version "${{ inputs.version }}" --promote "${{ inputs.channel }}"
-          CHANNEL_SLUG=$(replicated channel ls --app playball-exe --output json \
-            | jq -r --arg name "${{ inputs.channel }}" '.[] | select(.name == $name) | .channelSlug')
-          echo "channel-slug=${CHANNEL_SLUG}" >> $GITHUB_OUTPUT
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+
+      - name: Discover channel properties
+        id: channel
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
+        run: |
+          CHANNEL=$(replicated channel ls --app playball-exe --output json \
+            | jq --arg name "${{ inputs.channel }}" '.[] | select(.name == $name)')
+          echo "slug=$(echo "$CHANNEL"    | jq -r '.channelSlug')"     >> $GITHUB_OUTPUT
+          echo "id=$(echo "$CHANNEL"      | jq -r '.id')"              >> $GITHUB_OUTPUT
+          echo "sequence=$(echo "$CHANNEL" | jq -r '.channelSequence')" >> $GITHUB_OUTPUT
+          echo "app-id=$(echo "$CHANNEL"  | jq -r '.appId')"           >> $GITHUB_OUTPUT
 
       - name: Trigger airgap bundle build
         env:
           REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
         run: |
-          APP_ID=$(replicated api get /v3/apps \
-            | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
-          CHANNEL=$(replicated api get "/v3/app/${APP_ID}/channels" \
-            | jq --arg slug "${{ steps.create-release.outputs.channel-slug }}" '.channels[] | select(.channelSlug == $slug)')
-          CHANNEL_ID=$(echo "$CHANNEL" | jq -r '.id')
-          CHANNEL_SEQ=$(echo "$CHANNEL" | jq -r '.channelSequence')
-          replicated api post /v3/app/${APP_ID}/channel/${CHANNEL_ID}/release/${CHANNEL_SEQ}/airgap/build \
+          replicated api post /v3/app/${{ steps.channel.outputs.app-id }}/channel/${{ steps.channel.outputs.id }}/release/${{ steps.channel.outputs.sequence }}/airgap/build \
             -b '{}'
