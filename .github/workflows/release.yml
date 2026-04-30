@@ -60,6 +60,7 @@ jobs:
         id: channel
         env:
           REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
+          # replicated channel ls does not support the .replicated config file
           REPLICATED_APP: playball-exe
         run: |
           CHANNEL=$(replicated channel ls --output json \
