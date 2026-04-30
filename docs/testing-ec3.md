@@ -32,6 +32,10 @@ PR_NUMBER="<your-pr-number>"  # e.g. 46 — used to select the right Docker imag
 # IMAGE_TAG selects the branch Docker image built by CI (the default `main` tag won't have your branch's code).
 make package-charts VERSION="$RELEASE_VERSION" IMAGE_TAG="pr-${PR_NUMBER}"
 
+# Downloads the cert-manager and traefik chart archives into deploy/manifests/ so
+# EC3 can find them at install time. Versions are read from embedded-cluster-config.yaml.
+make bundle-extensions
+
 replicated release create \
   --version "$RELEASE_VERSION" \
   --promote Unstable \

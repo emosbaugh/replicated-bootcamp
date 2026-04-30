@@ -39,6 +39,17 @@ package-charts:
 	perl -i -pe 's/^    chartVersion: .*/    chartVersion: $(VERSION)/' deploy/manifests/helmchart.yaml
 	perl -i -pe 's/^  tag: .*/  tag: $(IMAGE_TAG)/' deploy/charts/values.yaml
 
+.PHONY: bundle-extensions
+bundle-extensions:
+	helm repo add traefik https://helm.traefik.io/traefik --force-update
+	helm repo add jetstack https://charts.jetstack.io --force-update
+	helm pull traefik/traefik \
+	  --version "$$(yq '.spec.extensions.helmCharts[] | select(.chart.name == "traefik") | .chart.chartVersion' deploy/manifests/embedded-cluster-config.yaml)" \
+	  -d deploy/manifests
+	helm pull jetstack/cert-manager \
+	  --version "$$(yq '.spec.extensions.helmCharts[] | select(.chart.name == "cert-manager") | .chart.chartVersion' deploy/manifests/embedded-cluster-config.yaml)" \
+	  -d deploy/manifests
+
 .PHONY: dev-setup
 dev-setup:
 	./scripts/dev-setup.sh

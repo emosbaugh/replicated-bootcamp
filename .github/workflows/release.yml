@@ -44,6 +44,9 @@ jobs:
       - name: Package charts
         run: make package-charts VERSION="${{ inputs.version }}" IMAGE_TAG="${{ inputs.image-tag }}"
 
+      - name: Bundle EC3 extension charts
+        run: make bundle-extensions
+
       - name: Create and promote Replicated release
         id: create-release
         env:
