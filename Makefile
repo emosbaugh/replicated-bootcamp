@@ -1,8 +1,5 @@
 include deploy/versions.env
 
-CHART_VERSION ?= 0.1.0-dev
-IMAGE_TAG ?= main
-
 .PHONY: all
 all: test lint
 
@@ -36,10 +33,6 @@ replicated-lint: helm-dep-update
 
 .PHONY: lint
 lint: helm-lint replicated-lint
-
-.PHONY: package-charts
-package-charts:
-	./deploy/scripts/package-charts.sh $(CHART_VERSION) $(IMAGE_TAG)
 
 .PHONY: dev-setup
 dev-setup:

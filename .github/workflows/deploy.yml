@@ -54,17 +54,22 @@ jobs:
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
 
-      - name: Package Helm chart
+      - name: Install Replicated CLI
         run: |
-          make package-charts \
-            CHART_VERSION="${{ steps.vars.outputs.version }}" \
-            IMAGE_TAG="${{ steps.vars.outputs.image-tag }}"
+          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
+            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
+          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
+            -o replicated.tar.gz
+          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
+          sudo mv replicated /usr/local/bin/replicated
 
       - name: Create and promote Replicated release
-        uses: replicatedhq/replicated-actions/create-release@v1
-        with:
-          app-slug: playball-exe
-          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          yaml-dir: deploy/build/manifests
-          promote-channel: ${{ steps.vars.outputs.channel }}
-          version: ${{ steps.vars.outputs.version }}
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+          REPLICATED_APP: playball-exe
+        run: |
+          VERSION="${{ steps.vars.outputs.version }}"
+          yq -i ".version = \"${VERSION}\"" deploy/charts/Chart.yaml
+          yq -i ".spec.chart.chartVersion = \"${VERSION}\"" deploy/manifests/helmchart.yaml
+          yq -i ".image.tag = \"${{ steps.vars.outputs.image-tag }}\"" deploy/charts/values.yaml
+          replicated release create --version "${VERSION}" --promote "${{ steps.vars.outputs.channel }}"
