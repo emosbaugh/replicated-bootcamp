@@ -38,8 +38,7 @@ make bundle-extensions
 
 replicated release create \
   --version "$RELEASE_VERSION" \
-  --promote Unstable \
- 
+  --promote Unstable
 ```
 
 Note the channel slug (e.g. `unstable`) and release version from the output.
@@ -52,7 +51,6 @@ replicated customer create \
   --channel Unstable \
   --type dev \
   --embedded-cluster-download \
-  \
   --app playball-exe
 ```
 
@@ -64,7 +62,6 @@ the customer ID):
 LICENSE_ID=$(replicated customer download-license \
   --customer <customer-id> \
   --app playball-exe \
-  \
   | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
 echo "License ID: $LICENSE_ID"
 ```
@@ -76,8 +73,7 @@ replicated vm create \
   --distribution ubuntu \
   --version 24.04 \
   --ttl 2h \
-  --ssh-public-key .ssh/id_ed25519.pub \
- 
+  --ssh-public-key .ssh/id_ed25519.pub
 ```
 
 Wait for `STATUS` to show `running`:
