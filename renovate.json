@@ -6,6 +6,12 @@
       "groupName": "node version",
       "matchPackageNames": ["node"],
       "matchDatasources": ["node-version", "docker"]
+    },
+    {
+      "groupName": "npm non-major dependencies",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "matchDepTypes": ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
     }
   ]
 }
