@@ -9,6 +9,8 @@ description: Use when running Replicated CLI commands to manage apps, channels, 
 
 Pass `--token $REPLICATED_API_TOKEN` to every command, or configure a profile. The env var does **not** auto-load — pass it explicitly.
 
+The `.replicated` config in the repo root sets `appSlug` and `manifests`/`charts` paths, so `release create` and `release lint` do **not** need `--app` or `--yaml-dir`. Other commands (channel, customer, registry) still require `--app`.
+
 ```bash
 replicated <command> --token $REPLICATED_API_TOKEN --app <app-slug>
 ```
@@ -43,21 +45,16 @@ replicated channel inspect <channel-id> --token $REPLICATED_API_TOKEN --app <slu
 
 ```bash
 # See docs/testing-ec3.md for the full workflow. Summary:
-# 1. Package the main chart
-helm dependency update deploy/charts
-helm package deploy/charts -d deploy/manifests --version "$CHART_VERSION"
+# 1. Stamp versions into Chart.yaml, helmchart.yaml, and values.yaml
+make package-charts VERSION="$RELEASE_VERSION" IMAGE_TAG="$IMAGE_TAG"
 
-# 2. Pull EC extension charts (cert-manager, traefik) — required for EC releases
-helm repo add traefik https://helm.traefik.io/traefik
-helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
-helm repo add jetstack https://charts.jetstack.io
-helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
+# 2. Pull EC extension chart archives into deploy/manifests/ (cert-manager, traefik)
+#    Versions are read from embedded-cluster-config.yaml — no duplication.
+make bundle-extensions
 
 # 3. Create and promote the release
-replicated release create --yaml-dir deploy/manifests --version "$RELEASE_VERSION" --promote Unstable --token $REPLICATED_API_TOKEN --app playball-exe
-
-# 4. Clean up
-rm deploy/manifests/*.tgz
+#    No --yaml-dir or --app needed: .replicated config provides both.
+replicated release create --version "$RELEASE_VERSION" --promote Unstable --token $REPLICATED_API_TOKEN
 
 # Promote an existing release sequence to a channel
 replicated release promote <sequence> <channel-id> --version 1.0.0 --token $REPLICATED_API_TOKEN --app <slug>
@@ -70,7 +67,6 @@ replicated release ls --token $REPLICATED_API_TOKEN --app <slug>
 
 | Flag | Description |
 |------|-------------|
-| `--yaml-dir string` | Directory of manifest YAMLs |
 | `--version string` | Version label |
 | `--promote string` | Channel name or ID to promote to |
 | `--ensure-channel` | Create channel if it doesn't exist |
@@ -134,7 +130,7 @@ Common endpoints:
 
 ## Common Mistakes
 
-- **Helm-based releases require packaged charts**: run `helm dependency update` + `helm package` before `release create`, and also `helm pull` any EC extension charts (cert-manager, traefik). See `docs/testing-ec3.md` for the full workflow. Without these, the release will fail with "failed to find chart for ...".
+- **EC releases require bundled extension charts**: run `make package-charts` then `make bundle-extensions` before `release create`. `bundle-extensions` pulls cert-manager and traefik archives into `deploy/manifests/` so EC3 can find them at install time. See `docs/testing-ec3.md` for the full workflow. Without these, the install fails with "no chart archive found for ...".
 - Forgetting `--token` — the CLI will fail with an auth error; always pass it explicitly
 - Using `--yaml` instead of `--yaml-dir` for multi-file manifests
 - Passing a channel name to `release promote` — it requires the channel **ID**, not name (use `channel ls` to find it)
