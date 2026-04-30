@@ -28,7 +28,7 @@ jobs:
       fail-build: false
     secrets: inherit
 
-  lint:
+  test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,64 +42,11 @@ jobs:
 
       - run: npm test
 
-      - name: Helm lint
-        run: |
-          helm lint deploy/charts --set nextauth.secret=test
-          helm lint deploy/charts \
-            --set nextauth.secret=test \
-            --set nextauth.url=https://example.com \
-            --set ingress.enabled=true \
-            --set ingress.hostname=example.com \
-            --set ingress.className=traefik
-
-      - name: Install Replicated CLI
-        run: |
-          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
-            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
-          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
-            -o replicated.tar.gz
-          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
-          sudo mv replicated /usr/local/bin/replicated
-
-      - name: Package Helm chart
-        run: |
-          helm package deploy/charts -d deploy/manifests --version "0.1.0"
-          helm repo add traefik https://helm.traefik.io/traefik
-          helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
-          helm repo add jetstack https://charts.jetstack.io
-          helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
-
-      - name: Replicated release lint
-        run: |
-          replicated release lint
-        env:
-          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-          REPLICATED_APP: playball-exe
-
-  release:
-    needs: [build, lint]
+  lint:
     runs-on: ubuntu-latest
-    outputs:
-      channel-slug: ${{ steps.create-release.outputs.channel-slug }}
-      version: ${{ steps.set-version.outputs.version }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set version
-        id: set-version
-        run: echo "version=0.1.0-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}" >> $GITHUB_OUTPUT
-
-      - name: Package Helm chart
-        run: |
-          VERSION="${{ steps.set-version.outputs.version }}"
-          sed -i "s/^  tag: .*/  tag: pr-${{ github.event.pull_request.number }}/" deploy/charts/values.yaml
-          sed -i "s/chartVersion: .*/chartVersion: $VERSION/" deploy/manifests/helmchart.yaml
-          helm package deploy/charts -d deploy/manifests --version "$VERSION"
-          helm repo add traefik https://helm.traefik.io/traefik
-          helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
-          helm repo add jetstack https://charts.jetstack.io
-          helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
-
       - name: Install Replicated CLI
         run: |
           version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
@@ -109,31 +56,23 @@ jobs:
           tar xf replicated.tar.gz replicated && rm replicated.tar.gz
           sudo mv replicated /usr/local/bin/replicated
 
-      - name: Create and promote Replicated release
-        id: create-release
-        uses: replicatedhq/replicated-actions/create-release@v1
-        with:
-          app-slug: playball-exe
-          api-token: ${{ secrets.REPLICATED_API_TOKEN }}
-          yaml-dir: deploy/manifests
-          promote-channel: pr-${{ github.event.pull_request.number }}
-          version: ${{ steps.set-version.outputs.version }}
+      - name: Helm lint
+        run: make helm-lint
 
-      - name: Trigger airgap bundle build
-        run: |
-          CHANNEL_SLUG="${{ steps.create-release.outputs.channel-slug }}"
-          APP_ID=$(replicated api get /v3/apps \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
-            | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
-          CHANNEL=$(replicated api get /v3/app/${APP_ID}/channels \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
-            | jq --arg slug "$CHANNEL_SLUG" '.channels[] | select(.channelSlug == $slug)')
-          CHANNEL_ID=$(echo "$CHANNEL" | jq -r '.id')
-          CHANNEL_SEQ=$(echo "$CHANNEL" | jq -r '.channelSequence')
-          echo "APP_ID=${APP_ID} CHANNEL_ID=${CHANNEL_ID} CHANNEL_SEQ=${CHANNEL_SEQ}"
-          replicated api post /v3/app/${APP_ID}/channel/${CHANNEL_ID}/release/${CHANNEL_SEQ}/airgap/build \
-            --token ${{ secrets.REPLICATED_API_TOKEN }} \
-            -b '{}'
+      - name: Replicated release lint
+        run: make replicated-lint
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
+
+  release:
+    needs: [build, scan, test, lint]
+    uses: ./.github/workflows/release.yml
+    with:
+      version: "0.1.0-pr.${{ github.event.pull_request.number }}.${{ github.run_number }}"
+      image-tag: pr-${{ github.event.pull_request.number }}
+      channel: pr-${{ github.event.pull_request.number }}
+    secrets:
+      replicated-api-token: ${{ secrets.REPLICATED_API_TOKEN }}
 
   e2e:
     needs: [release]

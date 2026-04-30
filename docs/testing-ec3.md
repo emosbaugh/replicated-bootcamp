@@ -25,35 +25,20 @@ Both the private and public key are gitignored — generate a new one each sessi
 Package the chart and create a Replicated release:
 
 ```bash
-# CHART_VERSION must match the chartVersion in deploy/manifests/helmchart.yaml
-CHART_VERSION="0.1.0"
-RELEASE_VERSION="${CHART_VERSION}-ec3-test"
+RELEASE_VERSION="0.1.0-ec3-test"
 PR_NUMBER="<your-pr-number>"  # e.g. 46 — used to select the right Docker image tag
 
-# Set the image tag to match the branch Docker image built by CI.
-# The default `main` tag won't have your branch's code.
-sed -i "s/^  tag: .*/  tag: pr-${PR_NUMBER}/" deploy/charts/values.yaml
+# Stamps versions into deploy/charts/Chart.yaml and deploy/manifests/helmchart.yaml.
+# IMAGE_TAG selects the branch Docker image built by CI (the default `main` tag won't have your branch's code).
+make package-charts VERSION="$RELEASE_VERSION" IMAGE_TAG="pr-${PR_NUMBER}"
 
-helm dependency update deploy/charts
-helm package deploy/charts -d deploy/manifests --version "$CHART_VERSION"
-
-# EC3 extensions (cert-manager, traefik) must be bundled as chart archives.
-# Without these the install will fail with "no chart archive found for ...".
-helm repo add traefik https://helm.traefik.io/traefik
-helm pull traefik/traefik --version 39.0.7 -d deploy/manifests
-helm repo add jetstack https://charts.jetstack.io
-helm pull jetstack/cert-manager --version v1.17.2 -d deploy/manifests
+# Downloads the cert-manager and traefik chart archives into deploy/manifests/ so
+# EC3 can find them at install time. Versions are read from embedded-cluster-config.yaml.
+make bundle-extensions
 
 replicated release create \
-  --yaml-dir deploy/manifests \
   --version "$RELEASE_VERSION" \
-  --promote Unstable \
-  --token $REPLICATED_API_TOKEN \
-  --app playball-exe
-
-# Clean up packaged archives and revert values.yaml
-rm deploy/manifests/*.tgz
-git checkout deploy/charts/values.yaml
+  --promote Unstable
 ```
 
 Note the channel slug (e.g. `unstable`) and release version from the output.
@@ -66,7 +51,6 @@ replicated customer create \
   --channel Unstable \
   --type dev \
   --embedded-cluster-download \
-  --token $REPLICATED_API_TOKEN \
   --app playball-exe
 ```
 
@@ -78,7 +62,6 @@ the customer ID):
 LICENSE_ID=$(replicated customer download-license \
   --customer <customer-id> \
   --app playball-exe \
-  --token $REPLICATED_API_TOKEN \
   | grep 'licenseID:' | awk '{print $2}' | tr -d '"')
 echo "License ID: $LICENSE_ID"
 ```
@@ -90,14 +73,13 @@ replicated vm create \
   --distribution ubuntu \
   --version 24.04 \
   --ttl 2h \
-  --ssh-public-key .ssh/id_ed25519.pub \
-  --token $REPLICATED_API_TOKEN
+  --ssh-public-key .ssh/id_ed25519.pub
 ```
 
 Wait for `STATUS` to show `running`:
 
 ```bash
-replicated vm ls --token $REPLICATED_API_TOKEN
+replicated vm ls
 ```
 
 Note the VM ID.
@@ -132,7 +114,7 @@ EOF
 
 ```bash
 USERNAME=$(cut -d' ' -f3 .ssh/id_ed25519.pub | cut -d'@' -f1)
-SCP_ENDPOINT=$(replicated vm scp-endpoint <vm-id> --username "$USERNAME" --token $REPLICATED_API_TOKEN)
+SCP_ENDPOINT=$(replicated vm scp-endpoint <vm-id> --username "$USERNAME")
 SCP_HOST=$(echo "$SCP_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
 SCP_PORT=$(echo "$SCP_ENDPOINT" | cut -d: -f3)
 
@@ -147,7 +129,7 @@ scp -i .ssh/id_ed25519 \
 ## SSH and Install
 
 ```bash
-SSH_ENDPOINT=$(replicated vm ssh-endpoint <vm-id> --username "$USERNAME" --token $REPLICATED_API_TOKEN)
+SSH_ENDPOINT=$(replicated vm ssh-endpoint <vm-id> --username "$USERNAME")
 SSH_HOST=$(echo "$SSH_ENDPOINT" | sed 's|[a-z]*://[^@]*@||' | cut -d: -f1)
 SSH_PORT=$(echo "$SSH_ENDPOINT" | cut -d: -f3)
 
@@ -194,7 +176,7 @@ sudo ./playball-exe upgrade \
 After install completes, expose port 30080:
 
 ```bash
-replicated vm port expose <vm-id> --port 30080 --protocol http,https --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 30080 --protocol http,https
 ```
 
 The command returns a public URL. Open it in a browser to access the Admin Console.
@@ -204,7 +186,7 @@ The command returns a public URL. Open it in a browser to access the Admin Conso
 Traefik listens on port 80. Expose it and open the hostname you configured:
 
 ```bash
-replicated vm port expose <vm-id> --port 80 --protocol http --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 80 --protocol http
 ```
 
 The app will be accessible at `http://<hostname>` (where `<hostname>` is the value you set in config-values.yaml).
@@ -214,7 +196,7 @@ The app will be accessible at `http://<hostname>` (where `<hostname>` is the val
 Traefik also listens on port 443 with a self-signed certificate. Expose it:
 
 ```bash
-replicated vm port expose <vm-id> --port 443 --protocol https --token $REPLICATED_API_TOKEN
+replicated vm port expose <vm-id> --port 443 --protocol https
 ```
 
 The app is accessible at the HTTPS URL. Your browser will show a certificate warning for the self-signed cert — proceed past it. HTTP traffic on port 80 redirects automatically to HTTPS.
@@ -233,6 +215,6 @@ sudo /var/lib/playball-exe/bin/kubectl get ingress -A
 Always delete the VM and archive the customer when done:
 
 ```bash
-replicated vm rm <vm-id> --token $REPLICATED_API_TOKEN
-replicated customer archive <customer-id> --token $REPLICATED_API_TOKEN --app playball-exe
+replicated vm rm <vm-id>
+replicated customer archive <customer-id> --app playball-exe
 ```

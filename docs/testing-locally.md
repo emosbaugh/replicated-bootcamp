@@ -4,10 +4,10 @@ Use [k3d](https://k3d.io) to run postgres, redis, and the Replicated SDK in a lo
 
 Two scripts handle everything:
 
-| Script | Purpose |
-|--------|---------|
-| `scripts/dev-setup.sh` | One-time cluster creation, Helm install, `.env.local` config, and DB migration |
-| `scripts/dev-run.sh` | Port-forwards all services and starts the Next.js dev server |
+| Command | Purpose |
+|---------|---------|
+| `make dev-setup` | One-time cluster creation, Helm install, `.env.local` config, and DB migration |
+| `make dev-run` | Port-forwards all services and starts the Next.js dev server |
 
 ## Prerequisites
 
@@ -28,7 +28,7 @@ export REPLICATED_LICENSE_ID=<your-license-id>
 ## Setup (once per environment)
 
 ```bash
-REPLICATED_LICENSE_ID=<your-license-id> ./scripts/dev-setup.sh
+REPLICATED_LICENSE_ID=<your-license-id> make dev-setup
 ```
 
 This will:
@@ -42,7 +42,7 @@ Re-running the script when `.env.local` already exists will leave it untouched.
 ## Start the Dev Server
 
 ```bash
-./scripts/dev-run.sh
+make dev-run
 ```
 
 This port-forwards postgres (`5432`), redis (`6379`), and the Replicated SDK (`3001`) to localhost, then starts the Next.js dev server at [http://localhost:3000](http://localhost:3000).

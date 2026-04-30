@@ -1,8 +1,9 @@
 # Stage 0: download support-bundle binary
 FROM alpine:3.19 AS support-bundle-downloader
+ARG SUPPORT_BUNDLE_VERSION=v0.125.1
 RUN apk add --no-cache wget && \
     wget -qO /tmp/sb.tar.gz \
-      "https://github.com/replicatedhq/troubleshoot/releases/download/v0.125.1/support-bundle_linux_amd64.tar.gz" && \
+      "https://github.com/replicatedhq/troubleshoot/releases/download/${SUPPORT_BUNDLE_VERSION}/support-bundle_linux_amd64.tar.gz" && \
     tar -xzf /tmp/sb.tar.gz -C /tmp support-bundle && \
     chmod +x /tmp/support-bundle
 

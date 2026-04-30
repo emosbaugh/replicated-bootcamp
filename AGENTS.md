@@ -6,13 +6,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Before Every Commit
 
-Run `npm test` before every `git commit`. Do not commit if any tests fail — fix the failures first.
+Run `make all` before every `git commit`. Do not commit if any step fails — fix the failures first.
 
 # Before Every Push
 
 Run all of the following before every `git push`. Do not push if any step fails — fix the failures first.
 
 ```
-docker build -f deploy/Dockerfile .
-helm lint deploy/charts --set nextauth.secret=test
+make docker-build
+make lint
 ```

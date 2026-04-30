@@ -1,6 +1,37 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^deploy/Dockerfile$"],
+      "matchStrings": [
+        "ARG SUPPORT_BUNDLE_VERSION=(?<currentValue>[^\\s]+)"
+      ],
+      "depNameTemplate": "replicatedhq/troubleshoot",
+      "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^deploy/manifests/embedded-cluster-config\\.yaml$"],
+      "matchStrings": [
+        "name: cert-manager\\s+chartVersion: \"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "cert-manager",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://charts.jetstack.io"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^deploy/manifests/embedded-cluster-config\\.yaml$"],
+      "matchStrings": [
+        "name: traefik\\s+chartVersion: \"(?<currentValue>[^\"]+)\""
+      ],
+      "depNameTemplate": "traefik",
+      "datasourceTemplate": "helm",
+      "registryUrlTemplate": "https://helm.traefik.io/traefik"
+    }
+  ],
   "packageRules": [
     {
       "groupName": "node version",
