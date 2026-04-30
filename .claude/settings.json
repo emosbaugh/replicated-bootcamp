@@ -5,6 +5,8 @@
       "Bash(replicated cluster:*)",
       "Bash(replicated vm:*)",
       "Bash(replicated network:*)",
+      "Bash(replicated release lint:*)",
+      "Bash(replicated version:*)",
       "Bash(k3d cluster:*)",
       "Bash(openssl rand:*)",
       "Bash(npm install:*)",

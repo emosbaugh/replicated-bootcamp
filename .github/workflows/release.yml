@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        required: true
+        type: string
+      image-tag:
+        required: true
+        type: string
+      channel:
+        required: true
+        type: string
+    secrets:
+      replicated-api-token:
+        required: true
+    outputs:
+      channel-slug:
+        description: Slug of the promoted channel
+        value: ${{ jobs.release.outputs.channel-slug }}
+      version:
+        description: The release version
+        value: ${{ jobs.release.outputs.version }}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      channel-slug: ${{ steps.create-release.outputs.channel-slug }}
+      version: ${{ steps.create-release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Replicated CLI
+        run: |
+          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
+            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
+          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
+            -o replicated.tar.gz
+          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
+          sudo mv replicated /usr/local/bin/replicated
+
+      - name: Package charts
+        run: make package-charts VERSION="${{ inputs.version }}" IMAGE_TAG="${{ inputs.image-tag }}"
+
+      - name: Create and promote Replicated release
+        id: create-release
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
+        run: |
+          replicated release create --version "${{ inputs.version }}" --promote "${{ inputs.channel }}"
+          APP_ID=$(replicated api get /v3/apps | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
+          CHANNEL_SLUG=$(replicated api get "/v3/app/${APP_ID}/channels" \
+            | jq -r --arg name "${{ inputs.channel }}" '.channels[] | select(.channelName == $name) | .channelSlug')
+          echo "channel-slug=${CHANNEL_SLUG}" >> $GITHUB_OUTPUT
+          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+
+      - name: Trigger airgap bundle build
+        env:
+          REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
+        run: |
+          APP_ID=$(replicated api get /v3/apps \
+            | jq -r '.apps[] | select(.slug == "playball-exe") | .id')
+          CHANNEL=$(replicated api get "/v3/app/${APP_ID}/channels" \
+            | jq --arg slug "${{ steps.create-release.outputs.channel-slug }}" '.channels[] | select(.channelSlug == $slug)')
+          CHANNEL_ID=$(echo "$CHANNEL" | jq -r '.id')
+          CHANNEL_SEQ=$(echo "$CHANNEL" | jq -r '.channelSequence')
+          replicated api post /v3/app/${APP_ID}/channel/${CHANNEL_ID}/release/${CHANNEL_SEQ}/airgap/build \
+            -b '{}'

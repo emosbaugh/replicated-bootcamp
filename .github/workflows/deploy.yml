@@ -31,12 +31,13 @@ jobs:
       tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
     secrets: inherit
 
-  release:
+  vars:
     runs-on: ubuntu-latest
-    needs: [docker, scan]
+    outputs:
+      version: ${{ steps.vars.outputs.version }}
+      image-tag: ${{ steps.vars.outputs.image-tag }}
+      channel: ${{ steps.vars.outputs.channel }}
     steps:
-      - uses: actions/checkout@v4
-
       - name: Set version and channel
         id: vars
         run: |
@@ -54,19 +55,12 @@ jobs:
           echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
           echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
 
-      - name: Install Replicated CLI
-        run: |
-          version=$(curl -s https://api.github.com/repos/replicatedhq/replicated/releases/latest \
-            | grep -m1 -Po '"tag_name":\s*"v\K[^"]+')
-          curl -Ls "https://github.com/replicatedhq/replicated/releases/download/v${version}/replicated_${version}_linux_amd64.tar.gz" \
-            -o replicated.tar.gz
-          tar xf replicated.tar.gz replicated && rm replicated.tar.gz
-          sudo mv replicated /usr/local/bin/replicated
-
-      - name: Package charts
-        run: make package-charts VERSION="${{ steps.vars.outputs.version }}" IMAGE_TAG="${{ steps.vars.outputs.image-tag }}"
-
-      - name: Create and promote Replicated release
-        env:
-          REPLICATED_API_TOKEN: ${{ secrets.REPLICATED_API_TOKEN }}
-        run: replicated release create --version "${{ steps.vars.outputs.version }}" --promote "${{ steps.vars.outputs.channel }}"
+  release:
+    needs: [docker, scan, vars]
+    uses: ./.github/workflows/release.yml
+    with:
+      version: ${{ needs.vars.outputs.version }}
+      image-tag: ${{ needs.vars.outputs.image-tag }}
+      channel: ${{ needs.vars.outputs.channel }}
+    secrets:
+      replicated-api-token: ${{ secrets.REPLICATED_API_TOKEN }}
