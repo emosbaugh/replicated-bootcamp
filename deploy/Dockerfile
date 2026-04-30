@@ -1,5 +1,5 @@
 # Stage 0: download support-bundle binary
-FROM alpine:3.19 AS support-bundle-downloader
+FROM alpine:3.23 AS support-bundle-downloader
 ARG SUPPORT_BUNDLE_VERSION=v0.125.1
 RUN apk add --no-cache wget && \
     wget -qO /tmp/sb.tar.gz \
