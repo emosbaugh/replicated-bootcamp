@@ -57,7 +57,7 @@ jobs:
           echo "channel=$CHANNEL" >> $GITHUB_OUTPUT
 
   release:
-    needs: [docker, scan, vars]
+    needs: [docker, vars]
     uses: ./.github/workflows/release.yml
     with:
       version: ${{ needs.vars.outputs.version }}

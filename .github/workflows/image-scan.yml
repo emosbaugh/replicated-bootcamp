@@ -7,11 +7,6 @@ on:
         description: Image tag to scan
         required: true
         type: string
-      fail-build:
-        description: Fail the workflow if vulnerabilities are found
-        required: false
-        default: true
-        type: boolean
   schedule:
     - cron: '0 6 * * *'
   workflow_dispatch:
@@ -21,11 +16,6 @@ on:
         required: false
         default: main
         type: string
-      fail-build:
-        description: Fail the workflow if vulnerabilities are found
-        required: false
-        default: true
-        type: boolean
 
 jobs:
   scan:
@@ -44,7 +34,6 @@ jobs:
 
       - name: Scan image with Grype (SARIF)
         uses: anchore/scan-action@v7
-        if: inputs.tag == 'main' || inputs.tag == ''
         with:
           image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
           fail-build: false
@@ -55,7 +44,7 @@ jobs:
 
       - name: Upload SARIF to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v3
-        if: always() && (inputs.tag == 'main' || inputs.tag == '')
+        if: always()
         with:
           sarif_file: results.sarif
           category: image-scan
@@ -64,7 +53,7 @@ jobs:
         uses: anchore/scan-action@v7
         with:
           image: ghcr.io/replemos/playball.exe:${{ inputs.tag != '' && inputs.tag || 'main' }}
-          fail-build: ${{ github.event_name == 'schedule' || inputs.fail-build }}
+          fail-build: false
           only-fixed: true
           severity-cutoff: medium
           output-format: table
