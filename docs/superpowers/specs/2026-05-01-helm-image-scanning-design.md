@@ -6,26 +6,27 @@
 
 ## Summary
 
-Add CI/CD capability to extract all container images from the playball-exe Helm chart (including subchart dependencies: PostgreSQL, Redis, Replicated), scan them for vulnerabilities using Grype, and upload SARIF reports to the GitHub Security tab.
+Add CI/CD capability to extract **all** container images used by the application deployment — from the playball-exe Helm chart, its subchart dependencies (PostgreSQL, Redis, Replicated SDK), and the Embedded Cluster extension charts (cert-manager, traefik) — scan each with Grype, and upload per-image SARIF reports to the GitHub Security tab.
+
+This replaces the previous single-image `image-scan.yml` which only scanned `ghcr.io/replemos/playball.exe`.
 
 ## Background
 
-The project already scans the main application image (`ghcr.io/replemos/playball.exe`) in `.github/workflows/image-scan.yml`. However, the Helm chart (`deploy/charts/Chart.yaml`) declares dependencies on:
+The previous `image-scan.yml` scanned only the application image built from this repo. However, the deployment uses many more images:
 
-- PostgreSQL (Bitnami)
-- Redis (Bitnami)
-- Replicated (library)
+- **Main chart dependencies** (`deploy/charts/Chart.yaml`): PostgreSQL, Redis, Replicated SDK
+- **EC extension charts** (`deploy/manifests/embedded-cluster-config.yaml`): cert-manager, traefik
 
-These dependency images are not currently scanned. When the chart is deployed, these images run in the cluster and represent a security surface area that should be monitored.
+These images run in the cluster but were never scanned. This workflow discovers them dynamically from rendered Helm templates and scans them all.
 
 ## Goals
 
-1. Extract all unique container images referenced by the Helm chart and its subchart dependencies
-2. Scan each extracted image for vulnerabilities using Grype (same tool as current app scan)
+1. Extract all unique container images from all Helm charts used in the deployment
+2. Scan each extracted image for vulnerabilities using Grype
 3. Generate SARIF reports for each image
 4. Upload SARIF reports to GitHub Security tab with per-image categories
-5. Never fail the build on vulnerabilities (report-only, matching current behavior)
-6. Run on every PR and on a daily schedule (matching current `image-scan.yml` triggers)
+5. Never fail the build on vulnerabilities (report-only)
+6. Run on every PR and on a daily schedule
 
 ## Non-Goals
 
@@ -33,58 +34,70 @@ These dependency images are not currently scanned. When the chart is deployed, t
 - Block PRs based on vulnerability findings
 - Scan images at runtime in the cluster
 - Generate custom SBOMs (Grype does this internally)
-- Replace the existing `image-scan.yml` (complement it)
 
 ## Architecture
 
 ### Image Extraction
 
-1. `helm dependency update deploy/charts` — fetches subcharts from OCI registries
-2. `helm template deploy/charts` — renders all manifests with dependencies enabled and the app image tag injected
-3. `yq '.. | .image? | select(.)' | grep -v '^---$'` — recursively extracts all `image:` fields from rendered YAML, filtering out document separators
-4. `sort -u` — deduplicates images
-5. JSON array output — feeds GitHub Actions matrix strategy
+The workflow discovers images from three sources:
 
-**Important:** The chart values hardcode Replicated proxy registries (`images.emosbaugh.be/...`). For CI scanning, we override these to upstream registries so images are publicly accessible:
+1. **Main chart** — `helm dependency update && helm template deploy/charts`
+2. **EC extensions** — `helm template jetstack/cert-manager` and `helm template traefik/traefik`
+
+For each source:
+- Render templates with dependency/enabled flags and upstream registries
+- Pipe through `yq '.. | .image? | select(.)' | grep -v '^---$'` to extract all `image:` fields
+- Combine, deduplicate with `sort -u`, and output compact JSON array
+
+**Registry overrides** (main chart uses Replicated proxy registries in values):
 - `--set image.registry=ghcr.io`
 - `--set postgresql.image.registry=docker.io`
 - `--set redis.image.registry=docker.io`
 - `--set replicated.image.registry=proxy.replicated.com`
 
+Extension charts are templated with default values (upstream registries already).
+
 ### Scanning
 
-6. Matrix job — one parallel job per unique image
-7. Each job runs `anchore/scan-action@v7` with `output-format: sarif`
-8. Each job uploads SARIF via `github/codeql-action/upload-sarif@v4` with unique category
+Matrix job — one parallel Grype scan per unique image. Each uploads SARIF with a unique sanitized category (e.g., `helm-image-quay-io-jetstack-cert-manager-controller-v1.17.2`).
 
 ### Data Flow
 
 ```
-Chart.yaml + values.yaml
-       |
-       v
-helm dependency update
-       |
-       v
-helm template (with upstream registries)
-       |
-       v
-yq image extraction
-       |
-       v
-JSON array of images
-       |
-       v
-GitHub Actions matrix (parallel)
-       |       |       |
-       v       v       v
-    Grype   Grype   Grype
-       |       |       |
-       v       v       v
-  SARIF   SARIF   SARIF
-       |       |       |
-       v       v       v
-   upload  upload  upload
+┌─────────────────┐     ┌─────────────────┐
+│ deploy/charts   │     │ EC extensions   │
+│  + dependencies │     │ (cert-manager,  │
+│  (postgresql,   │     │  traefik)       │
+│   redis, repl)  │     │                 │
+└────────┬────────┘     └────────┬────────┘
+         │                       │
+         ▼                       ▼
+  helm dependency update   helm repo add
+         │                       │
+         ▼                       ▼
+    helm template          helm template
+         │                       │
+         └──────────┬────────────┘
+                    ▼
+              yq image extraction
+                    │
+                    ▼
+            combine & deduplicate
+                    │
+                    ▼
+            JSON array of images
+                    │
+                    ▼
+         GitHub Actions matrix (parallel)
+              │   │   │   │   │   │   │
+              ▼   ▼   ▼   ▼   ▼   ▼   ▼
+           Grype Grype Grype Grype ...
+              │   │   │   │   │   │   │
+              ▼   ▼   ▼   ▼   ▼   ▼   ▼
+            SARIF SARIF SARIF SARIF ...
+              │   │   │   │   │   │   │
+              ▼   ▼   ▼   ▼   ▼   ▼   ▼
+            upload upload upload upload ...
 ```
 
 ## Components
@@ -94,39 +107,52 @@ GitHub Actions matrix (parallel)
 Reusable workflow with:
 - Inputs: `tag` (optional, default `main`)
 - Jobs:
-  - `extract-images`: Outputs JSON array of images
-  - `scan`: Matrix job using `fromJSON` to scan each image
+  - `extract-images`: Templates all charts, extracts images, outputs compact JSON array
+  - `scan`: Matrix job using `fromJSON` to scan each image in parallel
 
 ### Modified File: `.github/workflows/build-test.yml`
 
-Add `helm-scan` job:
-- Needs: `[build]`
-- Uses: `./.github/workflows/helm-image-scan.yml`
-- Passes: `tag: pr-${{ github.event.pull_request.number }}`
+- Added `helm-scan` job calling `helm-image-scan.yml`
+- **Removed** the old `scan` job that called `image-scan.yml`
 
 ### No New Application Code
 
-This is purely CI/CD infrastructure. No source code changes needed.
+Pure CI/CD infrastructure. No source code changes.
+
+## Images Scanned
+
+| Image | Source |
+|-------|--------|
+| `ghcr.io/replemos/playball.exe:<tag>` | Main chart (app) |
+| `docker.io/bitnami/postgresql:latest` | Main chart dependency |
+| `docker.io/bitnami/redis:latest` | Main chart dependency |
+| `proxy.replicated.com/library/replicated-sdk-image:1.19.3` | Main chart dependency |
+| `quay.io/jetstack/cert-manager-cainjector:v1.17.2` | EC extension |
+| `quay.io/jetstack/cert-manager-controller:v1.17.2` | EC extension |
+| `quay.io/jetstack/cert-manager-startupapicheck:v1.17.2` | EC extension |
+| `quay.io/jetstack/cert-manager-webhook:v1.17.2` | EC extension |
+| `docker.io/traefik:v3.6.13` | EC extension |
 
 ## Error Handling
 
 | Scenario | Behavior |
 |----------|----------|
 | No images found | Matrix skipped, workflow succeeds |
-| Helm dep update fails | Workflow fails fast (broken subchart config) |
+| Helm dep update fails | Workflow fails fast |
+| Extension chart template fails | `|| true` — partial results still processed |
 | Image scan fails | `fail-build: false`, SARIF still uploaded if possible |
 | SARIF upload fails | `if: always()`, partial results reported |
-| Private registry image | Add registry login step (currently all public) |
+| Private registry image | GHCR login conditional on `ghcr.io` |
 
 ## Security Considerations
 
-- All scanned images are from public registries (Docker Hub/bitnami, GHCR, proxy.replicated.com)
-- GHCR login handled by existing `docker/login-action` for app image
-- SARIF reports uploaded to GitHub Security tab (same permissions as existing scan)
+- All scanned images are from public registries
+- GHCR login is conditional (only for app image)
+- SARIF reports uploaded to GitHub Security tab
 
 ## Testing Strategy
 
-- Verify `helm-image-scan.yml` syntax with `actionlint` (if available) or by triggering workflow
-- Test image extraction locally: `make helm-dep-update && helm template ... | yq ...`
-- Verify matrix jobs are spawned correctly in PR
+- Test image extraction locally: run `helm template` + `yq` for all three sources
+- Verify JSON output is compact single-line (required for `$GITHUB_OUTPUT`)
+- Trigger workflow in PR to verify matrix jobs spawn
 - Verify SARIF files appear in GitHub Security tab under unique categories
