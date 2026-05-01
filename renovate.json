@@ -56,7 +56,6 @@
       "automerge": true
     },
     {
-      "groupName": "npm major dependencies",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["major"],
       "matchDepTypes": ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
