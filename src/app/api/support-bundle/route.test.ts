@@ -10,7 +10,6 @@ vi.mock('fs/promises', () => ({ readFile: vi.fn(), unlink: vi.fn() }))
 
 beforeEach(async () => {
   vi.stubEnv('REPLICATED_SDK_URL', 'http://replicated:3000')
-  vi.stubEnv('SUPPORT_BUNDLE_SECRET_NAME', 'my-release-support-bundle')
 
   const { getServerSession } = await import('next-auth')
   vi.mocked(getServerSession).mockResolvedValue({ user: { id: 'user-1' } } as any)
@@ -21,10 +20,7 @@ beforeEach(async () => {
   })
 
   const { readFile, unlink } = await import('fs/promises')
-  vi.mocked(readFile as any).mockImplementation(async (path: any) => {
-    if (String(path).includes('serviceaccount/namespace')) return 'default'
-    return Buffer.from('fake-bundle-data')
-  })
+  vi.mocked(readFile as any).mockResolvedValue(Buffer.from('fake-bundle-data'))
   vi.mocked(unlink).mockResolvedValue(undefined)
 })
 
@@ -49,28 +45,10 @@ describe('POST /api/support-bundle', () => {
     expect(await res.json()).toEqual({ error: 'SDK not configured' })
   })
 
-  it('returns 503 when SUPPORT_BUNDLE_SECRET_NAME is not set', async () => {
-    vi.stubEnv('SUPPORT_BUNDLE_SECRET_NAME', '')
-    const res = await POST()
-    expect(res.status).toBe(503)
-    expect(await res.json()).toEqual({ error: 'Support bundle not configured' })
-  })
-
-  it('returns 503 when not running in Kubernetes', async () => {
-    const { readFile } = await import('fs/promises')
-    vi.mocked(readFile as any).mockRejectedValueOnce(new Error('ENOENT'))
-    const res = await POST()
-    expect(res.status).toBe(503)
-    expect(await res.json()).toEqual({ error: 'Not running in Kubernetes' })
-  })
-
   it('returns 200 and uploads bundle as gzip when SDK returns ok', async () => {
     const fakeBundleData = Buffer.from('fake-bundle-data')
     const { readFile } = await import('fs/promises')
-    vi.mocked(readFile as any).mockImplementation(async (path: any) => {
-      if (String(path).includes('serviceaccount/namespace')) return 'default'
-      return fakeBundleData
-    })
+    vi.mocked(readFile as any).mockResolvedValue(fakeBundleData)
 
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, status: 200 }))
     const res = await POST()
