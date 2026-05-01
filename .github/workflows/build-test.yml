@@ -48,7 +48,6 @@ jobs:
     needs: [build]
     uses: ./.github/workflows/helm-image-scan.yml
     permissions:
-      packages: read
       security-events: write
     with:
       tag: pr-${{ github.event.pull_request.number }}
