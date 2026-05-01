@@ -29,12 +29,18 @@ jobs:
       - name: Update Helm dependencies
         run: make helm-dep-update
 
-      - name: Extract images from Helm chart
+      - name: Add extension chart repositories
+        run: |
+          helm repo add jetstack https://charts.jetstack.io --force-update
+          helm repo add traefik https://helm.traefik.io/traefik --force-update
+          helm repo update
+
+      - name: Extract images from Helm chart and EC extensions
         id: extract
         run: |
-          # Template the chart with upstream registries so we scan original images,
+          # Template the main chart with upstream registries so we scan original images,
           # not the Replicated proxy registry images which require customer-specific auth.
-          images=$(helm template playball-exe deploy/charts \
+          main_images=$(helm template playball-exe deploy/charts \
             --set nextauth.secret=test \
             --set nextauth.url=https://example.com \
             --set postgresql.enabled=true \
@@ -47,12 +53,28 @@ jobs:
             --set image.tag=${{ inputs.tag != '' && inputs.tag || 'main' }} \
             | yq '.. | .image? | select(.)' \
             | grep -v '^---$' \
+            | sort -u)
+
+          # Template EC extension charts with default values to get upstream images
+          cert_manager_version=$(yq '.spec.extensions.helmCharts[] | select(.chart.name == "cert-manager") | .chart.chartVersion' deploy/manifests/embedded-cluster-config.yaml)
+          traefik_version=$(yq '.spec.extensions.helmCharts[] | select(.chart.name == "traefik") | .chart.chartVersion' deploy/manifests/embedded-cluster-config.yaml)
+
+          extension_images=$({
+            helm template cert-manager jetstack/cert-manager --version "$cert_manager_version" --set installCRDs=true 2>/dev/null || true
+            helm template traefik traefik/traefik --version "$traefik_version" 2>/dev/null || true
+          } | yq '.. | .image? | select(.)' \
+            | grep -v '^---$' \
+            | sort -u)
+
+          # Combine and deduplicate all images
+          all_images=$(printf '%s\n%s' "$main_images" "$extension_images" \
+            | grep -v '^$' \
             | sort -u \
             | jq -R . \
             | jq -s -c .)
 
-          echo "images=$images" >> "$GITHUB_OUTPUT"
-          echo "Found images: $images"
+          echo "images=$all_images" >> "$GITHUB_OUTPUT"
+          echo "Found images: $all_images"
 
   scan:
     needs: [extract-images]
