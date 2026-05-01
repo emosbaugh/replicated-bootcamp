@@ -57,6 +57,8 @@ FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
+# Disable auto-updates for the support-bundle troubleshoot binary
+ENV TROUBLESHOOT_AUTO_UPDATE=false
 
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
