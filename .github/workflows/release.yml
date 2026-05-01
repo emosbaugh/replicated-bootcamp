@@ -53,7 +53,7 @@ jobs:
           REPLICATED_API_TOKEN: ${{ secrets.replicated-api-token }}
         run: |
           # release create reads .replicated config and automatically runs helm dependency update + helm package
-          replicated release create --version "${{ inputs.version }}" --promote "${{ inputs.channel }}"
+          replicated release create --version "${{ inputs.version }}" --promote "${{ inputs.channel }}" --ensure-channel
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
 
       - name: Discover channel properties
