@@ -20,25 +20,10 @@ export async function POST() {
     return NextResponse.json({ error: 'SDK not configured' }, { status: 503 })
   }
 
-  const secretName = process.env.SUPPORT_BUNDLE_SECRET_NAME
-  if (!secretName) {
-    return NextResponse.json({ error: 'Support bundle not configured' }, { status: 503 })
-  }
-
-  let namespace: string
-  try {
-    namespace = (
-      await readFile('/var/run/secrets/kubernetes.io/serviceaccount/namespace', 'utf8')
-    ).trim()
-  } catch {
-    return NextResponse.json({ error: 'Not running in Kubernetes' }, { status: 503 })
-  }
-
   const outputPath = join(tmpdir(), `support-bundle-${Date.now()}.tar.gz`)
 
   try {
     await execFileAsync('/usr/local/bin/support-bundle', [
-      `secret/${namespace}/${secretName}/support-bundle-spec`,
       `--output=${outputPath}`,
     ])
 
