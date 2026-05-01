@@ -51,7 +51,7 @@ jobs:
             | grep -v 'ghcr.io/replemos/playball.exe' \
             | sort -u \
             | jq -R . \
-            | jq -s .)
+            | jq -s -c .)
 
           echo "images=$images" >> "$GITHUB_OUTPUT"
           echo "Found images: $images"
