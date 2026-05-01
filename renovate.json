@@ -33,6 +33,9 @@
     }
   ],
   "schedule": ["before 9am on monday"],
+  "lockFileMaintenance": {
+    "enabled": true
+  },
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": ["security"]

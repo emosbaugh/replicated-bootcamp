@@ -1,6 +1,6 @@
 # Stage 0: download support-bundle binary
 FROM alpine:3.23 AS support-bundle-downloader
-ARG SUPPORT_BUNDLE_VERSION=v0.125.1
+ARG SUPPORT_BUNDLE_VERSION=v0.128.0
 RUN apk add --no-cache wget && \
     wget -qO /tmp/sb.tar.gz \
       "https://github.com/replicatedhq/troubleshoot/releases/download/${SUPPORT_BUNDLE_VERSION}/support-bundle_linux_amd64.tar.gz" && \
