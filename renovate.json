@@ -29,23 +29,31 @@
       ],
       "depNameTemplate": "traefik",
       "datasourceTemplate": "helm",
-      "registryUrlTemplate": "https://helm.traefik.io/traefik"
+      "registryUrlTemplate": "https://traefik.github.io/charts"
     }
   ],
+  "schedule": ["before 9am on monday"],
   "vulnerabilityAlerts": {
-    "enabled": true,
     "labels": ["security"]
   },
   "packageRules": [
     {
       "groupName": "node version",
       "matchPackageNames": ["node"],
-      "matchDatasources": ["node-version", "docker"]
+      "matchDatasources": ["node-version", "docker"],
+      "automerge": true
     },
     {
       "groupName": "npm non-major dependencies",
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["minor", "patch"],
+      "matchDepTypes": ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"],
+      "automerge": true
+    },
+    {
+      "groupName": "npm major dependencies",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["major"],
       "matchDepTypes": ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]
     }
   ]
