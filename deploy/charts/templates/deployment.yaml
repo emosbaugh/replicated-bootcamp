@@ -42,6 +42,7 @@ spec:
         - name: migrate
           image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /app/prisma-init
           command:
             - node
             - node_modules/prisma/build/index.js
@@ -55,6 +56,7 @@ spec:
         - name: seed
           image: "{{ default .Values.image.registry ((.Values.global).imageRegistry) }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          workingDir: /app/prisma-init
           command:
             - node
             - prisma/seed.js

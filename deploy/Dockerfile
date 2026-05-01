@@ -13,18 +13,32 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
-# Stage 2: install production dependencies only (no ts-node, typescript, vitest, tailwindcss, etc.)
-FROM node:24-alpine AS prod-deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-COPY prisma/schema.prisma ./prisma/
-# After install, remove Prisma engine binaries for non-Alpine platforms. The app uses
-# @prisma/adapter-pg (driver adapters) so no query engine is needed at all — only the
-# schema engine binary for `prisma migrate deploy` on linux-musl is required.
-RUN npm ci --omit=dev && \
-    find ./node_modules/@prisma/engines -type f \( -name "query-engine-*" -o -name "libquery_engine-*" \) -delete && \
-    find ./node_modules/@prisma/engines -type f -name "schema-engine-*" ! -name "*linux-musl*" -delete && \
-    find ./node_modules/prisma -type f -name "query-engine-*" -delete
+# Stage 2: install minimal dependencies for init containers (prisma migrate, seed).
+# The app and the init containers have completely separate node_modules.
+FROM node:24-alpine AS prisma-init
+WORKDIR /app/prisma-init
+COPY ./prisma-init/package.json ./prisma-init/package-lock.json ./
+# Only download the Prisma engine binary for the Alpine (linux-musl) platform.
+# Without this, Prisma ships binaries for every OS (~20MB each).
+ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
+RUN npm install --omit=dev && \
+    \
+    # typescript is an optional peerDependency of the prisma CLI; not needed at runtime.
+    rm -rf node_modules/typescript && \
+    \
+    # The prisma package bundles query compiler WASM files (~25MB) that are not needed
+    # for `prisma migrate deploy`; only the schema engine binary is required.
+    find node_modules/prisma/build -type f -name "query_compiler_*" -delete && \
+    \
+    # @prisma/studio-core ships a full React UI (~37MB). The CLI only needs data/bff.
+    rm -rf node_modules/@prisma/studio-core/dist/ui && \
+    find node_modules/@prisma/studio-core/dist -name "metafile-*.json" -delete && \
+    rm -rf node_modules/@prisma/studio-core/dist/data/sqlite-core && \
+    rm -rf node_modules/@prisma/studio-core/dist/data/postgres-core && \
+    rm -rf node_modules/@prisma/studio-core/dist/data/pglite && \
+    rm -rf node_modules/@prisma/studio-core/dist/data/mysql-core && \
+    find node_modules/@prisma/studio-core/dist -name "chunk-*.js" -delete && \
+    find node_modules/@prisma/studio-core/dist -name "index.css" -delete
 
 # Stage 3: build the Next.js app and pre-compile the seed script
 FROM node:24-alpine AS builder
@@ -63,26 +77,18 @@ ENV TROUBLESHOOT_AUTO_UPDATE=false
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nextjs
 
-# Standalone Next.js server output
-COPY --from=builder --chown=nextjs:nodejs /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Next.js standalone app — runs from its own directory with its own traced node_modules.
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./standalone
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./standalone/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public ./standalone/public
 
-# Production-only node_modules (devDependencies excluded)
-# @prisma/engines native binaries (~100MB) are a production dep and unavoidable for migrations
-COPY --from=prod-deps --chown=nextjs:nodejs /app/node_modules ./node_modules
-
-# Prisma schema and migrations for the migrate init container
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-
-# Generated Prisma client (required by seed.js at runtime)
-COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
-
-# Pre-compiled seed script (replaces seed.ts — no ts-node needed)
-COPY --from=builder --chown=nextjs:nodejs /app/seed-dist/prisma/seed.js ./prisma/seed.js
-
-COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.js ./prisma.config.js
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# Init-container workspace — completely isolated from the app. Contains only the
+# Prisma CLI, the schema/migrations, the generated client, and the compiled seed.
+COPY --from=prisma-init --chown=nextjs:nodejs /app/prisma-init ./prisma-init
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma-init/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.js ./prisma-init/prisma.config.js
+COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./prisma-init/src/generated
+COPY --from=builder --chown=nextjs:nodejs /app/seed-dist/prisma/seed.js ./prisma-init/prisma/seed.js
 
 COPY --from=support-bundle-downloader /tmp/support-bundle /usr/local/bin/support-bundle
 
@@ -92,4 +98,6 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-CMD ["node", "server.js"]
+# Run from the standalone directory so Node.js resolves modules from
+# /app/standalone/node_modules/ (the minimal traced set).
+CMD ["node", "standalone/server.js"]

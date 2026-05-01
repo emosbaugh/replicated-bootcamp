@@ -5,6 +5,7 @@ node_modules
 .env.*
 !.env.example
 deploy
+!prisma-init
 docs
 README.md
 docker-compose.yml
