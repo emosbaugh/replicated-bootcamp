@@ -8,13 +8,13 @@ RUN apk add --no-cache wget && \
     chmod +x /tmp/support-bundle
 
 # Stage 1: install all dependencies (needed for build and prisma generate)
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 
 # Stage 2: install production dependencies only (no ts-node, typescript, vitest, tailwindcss, etc.)
-FROM node:20-alpine AS prod-deps
+FROM node:24-alpine AS prod-deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY prisma/schema.prisma ./prisma/
@@ -27,7 +27,7 @@ RUN npm ci --omit=dev && \
     find ./node_modules/prisma -type f -name "query-engine-*" -delete
 
 # Stage 3: build the Next.js app and pre-compile the seed script
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
@@ -53,7 +53,7 @@ RUN node_modules/.bin/tsc \
 RUN printf 'const { defineConfig } = require("prisma/config");\nmodule.exports = defineConfig({ schema: "prisma/schema.prisma", migrations: { path: "prisma/migrations" }, datasource: { url: process.env.DATABASE_URL } });\n' > /app/prisma.config.js
 
 # Stage 4: production image
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
