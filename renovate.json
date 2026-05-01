@@ -32,6 +32,10 @@
       "registryUrlTemplate": "https://helm.traefik.io/traefik"
     }
   ],
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"]
+  },
   "packageRules": [
     {
       "groupName": "node version",
