@@ -1,0 +1,112 @@
+name: Helm Image Scan
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: Image tag for the app image
+        required: false
+        default: main
+        type: string
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag for the app image
+        required: false
+        default: main
+        type: string
+
+jobs:
+  extract-images:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.extract.outputs.images }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install yq
+        run: |
+          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          chmod +x /usr/local/bin/yq
+
+      - name: Update Helm dependencies
+        run: make helm-dep-update
+
+      - name: Extract images from Helm chart
+        id: extract
+        run: |
+          # Template the chart with upstream registries so we scan original images,
+          # not the Replicated proxy registry images which require customer-specific auth
+          images=$(helm template playball-exe deploy/charts \
+            --set nextauth.secret=test \
+            --set nextauth.url=https://example.com \
+            --set postgresql.enabled=true \
+            --set redis.enabled=true \
+            --set replicated.enabled=true \
+            --set image.registry=ghcr.io \
+            --set postgresql.image.registry=docker.io \
+            --set redis.image.registry=docker.io \
+            --set replicated.image.registry=proxy.replicated.com \
+            --set image.tag=${{ inputs.tag != '' && inputs.tag || 'main' }} \
+            | yq '.. | .image? | select(.)' \
+            | grep -v '^---$' \
+            | sort -u \
+            | jq -R . \
+            | jq -s .)
+
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+          echo "Found images: $images"
+
+  scan:
+    needs: [extract-images]
+    runs-on: ubuntu-latest
+    if: ${{ needs.extract-images.outputs.images != '[]' }}
+    strategy:
+      matrix:
+        image: ${{ fromJSON(needs.extract-images.outputs.images) }}
+    timeout-minutes: 15
+    permissions:
+      packages: read
+      security-events: write
+    steps:
+      - name: Log in to GitHub Container Registry
+        if: contains(matrix.image, 'ghcr.io')
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Sanitize image name for SARIF category
+        id: category
+        run: |
+          category=$(echo "${{ matrix.image }}" | sed 's|/|-|g; s|:|-|g')
+          echo "category=helm-image-$category" >> "$GITHUB_OUTPUT"
+
+      - name: Scan image with Grype (SARIF)
+        uses: anchore/scan-action@v7
+        with:
+          image: ${{ matrix.image }}
+          fail-build: false
+          only-fixed: true
+          severity-cutoff: medium
+          output-format: sarif
+          output-file: results.sarif
+
+      - name: Upload SARIF to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: results.sarif
+          category: ${{ steps.category.outputs.category }}
+
+      - name: Scan image with Grype (table output)
+        uses: anchore/scan-action@v7
+        with:
+          image: ${{ matrix.image }}
+          fail-build: false
+          only-fixed: true
+          severity-cutoff: medium
+          output-format: table
