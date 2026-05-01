@@ -42,7 +42,6 @@ jobs:
       security-events: write
     with:
       tag: pr-${{ github.event.pull_request.number }}
-      fail-build: false
     secrets: inherit
 
   test:
