@@ -34,9 +34,9 @@ jobs:
       tag: pr-${{ github.event.pull_request.number }}
     secrets: inherit
 
-  scan:
+  helm-scan:
     needs: [build]
-    uses: ./.github/workflows/image-scan.yml
+    uses: ./.github/workflows/helm-image-scan.yml
     permissions:
       packages: read
       security-events: write
