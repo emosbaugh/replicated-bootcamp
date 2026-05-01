@@ -30,7 +30,7 @@ spec:
             enabled: true
       - chart:
           name: traefik
-          chartVersion: "39.0.7"
+          chartVersion: "39.0.8"
         releaseName: traefik
         namespace: traefik
         values:
