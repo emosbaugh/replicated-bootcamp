@@ -1,6 +1,6 @@
 # Stage 0: download support-bundle binary
 FROM alpine:3.23 AS support-bundle-downloader
-ARG SUPPORT_BUNDLE_VERSION=v0.125.1
+ARG SUPPORT_BUNDLE_VERSION=v0.128.0
 RUN apk add --no-cache wget && \
     wget -qO /tmp/sb.tar.gz \
       "https://github.com/replicatedhq/troubleshoot/releases/download/${SUPPORT_BUNDLE_VERSION}/support-bundle_linux_amd64.tar.gz" && \
@@ -24,7 +24,8 @@ COPY prisma/schema.prisma ./prisma/
 RUN npm ci --omit=dev && \
     find ./node_modules/@prisma/engines -type f \( -name "query-engine-*" -o -name "libquery_engine-*" \) -delete && \
     find ./node_modules/@prisma/engines -type f -name "schema-engine-*" ! -name "*linux-musl*" -delete && \
-    find ./node_modules/prisma -type f -name "query-engine-*" -delete
+    find ./node_modules/prisma -type f -name "query-engine-*" -delete && \
+    rm -rf ./node_modules/@prisma/dev ./node_modules/prisma/node_modules/@prisma/dev
 
 # Stage 3: build the Next.js app and pre-compile the seed script
 FROM node:24-alpine AS builder
