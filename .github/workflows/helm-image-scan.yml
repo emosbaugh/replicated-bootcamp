@@ -33,7 +33,8 @@ jobs:
         id: extract
         run: |
           # Template the chart with upstream registries so we scan original images,
-          # not the Replicated proxy registry images which require customer-specific auth
+          # not the Replicated proxy registry images which require customer-specific auth.
+          # Skip ghcr.io images since the app image is already scanned by image-scan.yml.
           images=$(helm template playball-exe deploy/charts \
             --set nextauth.secret=test \
             --set nextauth.url=https://example.com \
@@ -47,6 +48,7 @@ jobs:
             --set image.tag=${{ inputs.tag != '' && inputs.tag || 'main' }} \
             | yq '.. | .image? | select(.)' \
             | grep -v '^---$' \
+            | grep -v 'ghcr.io/replemos/playball.exe' \
             | sort -u \
             | jq -R . \
             | jq -s .)
@@ -63,17 +65,8 @@ jobs:
         image: ${{ fromJSON(needs.extract-images.outputs.images) }}
     timeout-minutes: 15
     permissions:
-      packages: read
       security-events: write
     steps:
-      - name: Log in to GitHub Container Registry
-        if: contains(matrix.image, 'ghcr.io')
-        uses: docker/login-action@v4
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Sanitize image name for SARIF category
         id: category
         run: |
