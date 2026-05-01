@@ -26,11 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install yq
-        run: |
-          wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
-          chmod +x /usr/local/bin/yq
-
       - name: Update Helm dependencies
         run: make helm-dep-update
 
