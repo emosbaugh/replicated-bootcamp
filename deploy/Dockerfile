@@ -17,7 +17,7 @@ RUN npm ci --ignore-scripts
 # The app and the init containers have completely separate node_modules.
 FROM node:24-alpine AS prisma-init
 WORKDIR /app/prisma-init
-COPY ./prisma-init/package.json ./prisma-init/.npmrc ./
+COPY ./prisma-init/package.json ./prisma-init/package-lock.json ./
 # Only download the Prisma engine binary for the Alpine (linux-musl) platform.
 # Without this, Prisma ships binaries for every OS (~20MB each).
 ENV PRISMA_CLI_BINARY_TARGETS=linux-musl-openssl-3.0.x
