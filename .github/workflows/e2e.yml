@@ -136,7 +136,7 @@ jobs:
 
       - name: Install support-bundle CLI
         id: install-support-bundle
-        if: always() && steps.create-cluster.outcome != 'skipped'
+        if: ${{ !cancelled() && steps.create-cluster.outcome != 'skipped' }}
         run: |
           curl -fsSL https://github.com/replicatedhq/troubleshoot/releases/latest/download/support-bundle_linux_amd64.tar.gz \
             | tar xz -C /tmp support-bundle
@@ -144,14 +144,14 @@ jobs:
 
       - name: Collect support bundle (k8s)
         id: collect-support-bundle
-        if: always() && steps.create-cluster.outcome != 'skipped' && steps.install-support-bundle.outcome == 'success'
+        if: ${{ !cancelled() && steps.create-cluster.outcome != 'skipped' && steps.install-support-bundle.outcome == 'success' }}
         run: |
           support-bundle --load-cluster-specs \
             --output /tmp/support-bundle \
             --interactive=false
 
       - name: Upload support bundle (k8s)
-        if: always() && steps.create-cluster.outcome != 'skipped' && steps.collect-support-bundle.outcome == 'success'
+        if: ${{ !cancelled() && steps.create-cluster.outcome != 'skipped' && steps.collect-support-bundle.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           name: support-bundle-k8s-pr-${{ inputs.pr-number }}-${{ github.run_number }}

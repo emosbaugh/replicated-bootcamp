@@ -192,7 +192,7 @@ jobs:
 
       - name: Collect support bundle (ec3)
         id: collect-support-bundle
-        if: always() && steps.create-vm.outcome == 'success'
+        if: ${{ !cancelled() && steps.create-vm.outcome == 'success' }}
         continue-on-error: true
         run: |
           VM_ID="${{ steps.create-vm.outputs.vm-id }}"
@@ -213,7 +213,7 @@ jobs:
             ./support-bundle.tar.gz
 
       - name: Upload support bundle (ec3)
-        if: always() && steps.collect-support-bundle.outcome == 'success'
+        if: ${{ !cancelled() && steps.collect-support-bundle.outcome == 'success' }}
         uses: actions/upload-artifact@v7
         with:
           name: support-bundle-ec3-pr-${{ inputs.pr-number }}-${{ github.run_number }}

@@ -34,8 +34,10 @@
   ],
   "schedule": ["before 9am on monday"],
   "vulnerabilityAlerts": {
+    "enabled": true,
     "labels": ["security"]
   },
+  "osvVulnerabilityAlerts": true,
   "packageRules": [
     {
       "groupName": "node version",
