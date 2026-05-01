@@ -27,6 +27,7 @@ jobs:
     uses: ./.github/workflows/image-scan.yml
     permissions:
       packages: read
+      security-events: write
     with:
       tag: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'main' }}
     secrets: inherit

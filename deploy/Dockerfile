@@ -24,8 +24,7 @@ COPY prisma/schema.prisma ./prisma/
 RUN npm ci --omit=dev && \
     find ./node_modules/@prisma/engines -type f \( -name "query-engine-*" -o -name "libquery_engine-*" \) -delete && \
     find ./node_modules/@prisma/engines -type f -name "schema-engine-*" ! -name "*linux-musl*" -delete && \
-    find ./node_modules/prisma -type f -name "query-engine-*" -delete && \
-    rm -rf ./node_modules/@prisma/dev ./node_modules/prisma/node_modules/@prisma/dev
+    find ./node_modules/prisma -type f -name "query-engine-*" -delete
 
 # Stage 3: build the Next.js app and pre-compile the seed script
 FROM node:24-alpine AS builder
