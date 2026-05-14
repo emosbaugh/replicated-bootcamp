@@ -10,7 +10,7 @@ spec:
     helmCharts:
       - chart:
           name: cert-manager
-          chartVersion: "v1.17.2"
+          chartVersion: "v1.20.2"
         releaseName: cert-manager
         namespace: cert-manager
         weight: 10
