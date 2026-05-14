@@ -15,6 +15,6 @@ dependencies:
     repository: oci://registry-1.docker.io/bitnamicharts
     condition: redis.enabled
   - name: replicated
-    version: "1.19.3"
+    version: "1.19.4"
     repository: oci://registry.replicated.com/library
     condition: replicated.enabled
